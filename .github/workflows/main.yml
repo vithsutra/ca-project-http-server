@@ -44,6 +44,7 @@ jobs:
           echo "AWS_SECRETE_ACCESS_KEY=${{ secrets.AWS_SECRETE_ACCESS_KEY }}" >> .env
           echo "RABBITMQ_URL=${{ secrets.RABBITMQ_URL }}" >> .env
           echo "QUEUE_NAME=${{ secrets.QUEUE_NAME }}" >> .env
+          echo "AWS_S3_BUCKET_NAME=${{ secrets.AWS_S3_BUCKET_NAME }}" >> .env
 
       - name: Setup Deploy Environment in GCE Instance
         uses: appleboy/ssh-action@v0.1.10
