@@ -31,6 +31,7 @@ jobs:
     steps:
       - name: Create .env file
         run: |
+          echo "SERVER_MODE=${{ secrets.SERVER_MODE }}" >> .env
           echo "ROOT_USERNAME=${{ secrets.ROOT_PASSWORD }}" >> .env
           echo "ROOT_PASSWORD=${{ secrets.ROOT_PASSWORD }}" >> .env
           echo "JWT_TOKEN_SCRETE_KEY=${{ secrets.JWT_TOKEN_SCRETE_KEY }}" >> .env
