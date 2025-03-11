@@ -1,0 +1,190 @@
+package models
+
+import (
+	"io"
+	"time"
+)
+
+type User struct {
+	UserId      string
+	AdminId     string
+	Name        string
+	Dob         string
+	Email       string
+	PhoneNumber string
+	ProfileUrl  string
+	Password    string
+	Position    string
+	CategoryId  string
+}
+
+type CreateUserRequest struct {
+	AdminId     string `json:"admin_id" validate:"required"`
+	CategoryId  string `json:"category_id" validate:"required"`
+	Name        string `json:"name" validate:"required"`
+	Dob         string `json:"dob" validate:"required"`
+	Email       string `json:"email" validate:"required,email"`
+	PhoneNumber string `json:"phone_number" validate:"required"`
+	Password    string `json:"password" validate:"required,password"`
+	Position    string `json:"position" validate:"required"`
+}
+
+type UserResponse struct {
+	UserId       string `json:"user_id"`
+	Name         string `json:"name"`
+	Dob          string `json:"dob"`
+	Email        string `json:"email"`
+	PhoneNumber  string `json:"phone_number"`
+	ProfileUrl   string `json:"profile_url"`
+	Position     string `json:"position"`
+	CategoryId   string `json:"category_id"`
+	CategoryName string `json:"category_name"`
+	LoginStatus  bool   `json:"login_status"`
+	Latitude     string `json:"latitude"`
+	Longitude    string `json:"longitude"`
+}
+
+type UserLoginRequest struct {
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required"`
+}
+
+type UserLoginResponse struct {
+	Token string `json:"token"`
+}
+
+type UserWorkLoginRequest struct {
+	UserId    string `json:"user_id" validate:"required"`
+	LoginDate string `json:"date" validate:"required,date"`
+	LoginTime string `json:"time" validate:"required,time"`
+	Latitude  string `json:"latitude" validate:"required,latitude"`
+	Longitude string `json:"longitude" validate:"required,longitude"`
+}
+
+type UserWorkHistory struct {
+	UserId       string
+	WorkDate     string
+	LoginTime    string
+	LogoutTime   string
+	Latitude     string
+	Longitude    string
+	UploadedWork string
+}
+
+type UserWorkLogoutRequest struct {
+	UserId     string `json:"user_id" validate:"required"`
+	LogoutDate string `json:"date" validate:"required,date"`
+	LogoutTime string `json:"time" validate:"required,time"`
+	Work       string `json:"work" validate:"required"`
+}
+
+type UserLeaveRequest struct {
+	UserId      string `json:"user_id" validate:"required"`
+	LeaveFrom   string `json:"leave_from" validate:"required,date"`
+	LeaveTo     string `json:"leave_to" validate:"required,date"`
+	LeaveReason string `json:"leave_reason" validate:"required"`
+}
+
+type UserLeave struct {
+	LeaveId              string
+	UserId               string
+	LeaveFrom            string
+	LeaveTo              string
+	LeaveReason          string
+	LeaveStatus          string
+	LeaveStatusUpdatedBy string
+}
+
+type UserLeaveResponse struct {
+	LeaveId                string `json:"leave_id"`
+	LeaveFrom              string `json:"leave_from"`
+	LeaveTo                string `json:"leave_to"`
+	LeaveReason            string `json:"leave_reason"`
+	LeaveStatus            string `json:"leave_status"`
+	LeaveStatusUpdatedBy   string `json:"leave_status_updated_by"`
+	LeaveStatusUpdatedDate string `json:"leave_status_updated_date"`
+	LeaveStatusUpdtedTime  string `json:"leave_status_updated_time"`
+}
+
+type UserProfileInfoUpdateRequest struct {
+	UserId      string `json:"user_id" validate:"required"`
+	CategoryId  string `json:"category_id" validate:"required"`
+	Name        string `json:"name" validate:"required"`
+	Dob         string `json:"dob" validate:"required"`
+	Email       string `json:"email" validate:"required,email"`
+	PhoneNumber string `json:"phone_number" validate:"required"`
+	Position    string `json:"position" validate:"required"`
+}
+
+type UserLastProfileUpdateTimeResponse struct {
+	Time string `json:"time"`
+}
+
+type UserNewPasswordUpdateRequest struct {
+	Password string `json:"password" validate:"required,password"`
+}
+
+type UserForgotPasswordRequest struct {
+	Email string `json:"email" validate:"required,email"`
+}
+
+type UserOtpEmailFormat struct {
+	To        string            `json:"to"`
+	Subject   string            `json:"subject"`
+	EmailType string            `json:"email_type"`
+	Data      map[string]string `json:"data"`
+}
+
+type UserWelcomeEmailFormat struct {
+	To        string            `json:"to"`
+	Subject   string            `json:"subject"`
+	EmailType string            `json:"email_type"`
+	Data      map[string]string `json:"data"`
+}
+
+type UserOtpValidateRequest struct {
+	Email string `json:"email" validate:"required,email"`
+	Otp   string `json:"otp" validate:"required"`
+}
+
+type UserValidateOtpResponse struct {
+	Token string `json:"token"`
+}
+
+type UserDatabaseInterface interface {
+	CheckUserEmailExists(email string) (bool, error)
+	CreateUser(user *User) error
+	GetUsers(adminId string) ([]*UserResponse, error)
+	CheckUserIdExists(userId string) (bool, error)
+	DeleteUser(userId string) error
+	GetUserForLogin(email string) (string, string, string, error)
+	CheckUserWorkEntryExists(userId string, date string) (bool, error)
+	UserWorkLogin(userWorkHistory *UserWorkHistory) error
+	CheckUserWorkLoginEntryExists(userId string, date string) (bool, error)
+	UserWorkLogout(userWorkLogoutRequest *UserWorkLogoutRequest) error
+	CheckUserPendingLeaveExists(userId string) (bool, error)
+	ApplyUserLeave(userLeave *UserLeave) error
+	GetUserLeaves(userId string, leaveStatus string) ([]*UserLeaveResponse, error)
+	CheckLeaveIdExists(leaveId string) (bool, error)
+	CheckPendingLeaveExistsByLeaveId(leaveId string) (bool, error)
+	CancelUserLeave(leaveId string, userType string) error
+	GrantUserLeave(leaveId string) error
+	UpdateUserProfileInfo(userId string, userProfileUpdateRequest *UserProfileInfoUpdateRequest) error
+	UpdateUserProfileUrl(userId string, url string) error
+	GetUserProfileUrl(userId string) (string, error)
+	GetUserLastProfileUpdateTime(userId string) (*time.Time, error)
+	UpdateNewUserPassword(userId string, password string) error
+	StoreUserOtp(email string, otp string, expireTime *time.Time) error
+	ClearOtp(email string, otp string) error
+	CheckOtpExists(email string, otp string) (bool, error)
+	GetUserDetailsForValidateOtp(email string) (string, string, error)
+}
+
+type UserStorageInterface interface {
+	UploadUserProfilePicture(profilePictureFileName string, file io.ReadSeeker) error
+	DeleteUserProfilePicture(fileName string) error
+}
+
+type EmailService interface {
+	SendEmail(data []byte) error
+}
