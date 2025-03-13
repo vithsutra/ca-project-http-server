@@ -7,7 +7,7 @@ import (
 )
 
 func GenerateOTP() (string, error) {
-	max := big.NewInt(1000000) // 6 digits => 000000 to 999999
+	max := big.NewInt(10000) // 6 digits => 000000 to 999999
 
 	n, err := rand.Int(rand.Reader, max)
 	if err != nil {
