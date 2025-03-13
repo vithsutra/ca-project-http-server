@@ -7,12 +7,14 @@ import (
 )
 
 func GenerateOTP() (string, error) {
-	max := big.NewInt(10000) // 6 digits => 000000 to 999999
-
-	n, err := rand.Int(rand.Reader, max)
-	if err != nil {
-		return "", err
+	otp := ""
+	for i := 0; i < 4; i++ {
+		// Generate a random number between 0 and 9
+		n, err := rand.Int(rand.Reader, big.NewInt(10))
+		if err != nil {
+			return "", err
+		}
+		otp += fmt.Sprintf("%d", n.Int64())
 	}
-
-	return fmt.Sprintf("%06d", n.Int64()), nil
+	return otp, nil
 }
