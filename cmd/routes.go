@@ -1,6 +1,8 @@
 package main
 
 import (
+	"net/http"
+
 	"github.com/labstack/echo/v4"
 	"github.com/vithsutra/ca_project_http_server/internals/handlers"
 	"github.com/vithsutra/ca_project_http_server/internals/middlewares"
@@ -18,6 +20,12 @@ func InitHttpRoutes(e *echo.Echo,
 	adminHandler := handlers.NewAdminHandler(adminRepo)
 	employeeCategoryHandler := handlers.NewEmployeeCategoryHandler(employeeCategoryRepo)
 	userHandler := handlers.NewUserHandler(userRepo)
+
+	//cors
+	e.Use(middlewares.CorsMiddlware())
+	e.OPTIONS("/*", func(c echo.Context) error {
+		return c.NoContent(http.StatusOK)
+	})
 	//root routes
 	root := e.Group("/root")
 	root.Use(middlewares.RootMiddleware())
@@ -33,7 +41,6 @@ func InitHttpRoutes(e *echo.Echo,
 
 	//admin routes
 	admin := e.Group("/admin")
-	admin.Use(middlewares.CorsMiddlware())
 	admin.Use(middlewares.JwtMiddleware())
 	admin.POST("/create/employee_category", employeeCategoryHandler.CreateEmployeeCategoryHandler)
 	admin.GET("/get/employee_categories/:adminId", employeeCategoryHandler.GetEmployeeCategoriesHandler)
