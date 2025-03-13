@@ -9,7 +9,7 @@ import (
 
 func CorsMiddlware() echo.MiddlewareFunc {
 	return middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{"localhost:3000"},
+		AllowOrigins: []string{"http://127.0.0.1:3000", "http://127.0.0.1:3001"},
 		AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodDelete, http.MethodPut, http.MethodPatch},
 	})
 }
