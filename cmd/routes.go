@@ -65,6 +65,7 @@ func InitHttpRoutes(e *echo.Echo,
 	user.GET("/last_profile_update_time/:userId", userHandler.GetUserLastProfileUpdateTimeHandler)
 	user.POST("/update/password/:userId", userHandler.UpdateUserNewPaswordHandler)
 	user.POST("/validate/otp", userHandler.ValidateUserOtpHandler)
+	user.GET("/work_history/:userId", userHandler.GetUserWorkHistoryHandler)
 
 	return e
 }

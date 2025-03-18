@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -799,4 +800,54 @@ func (user *UserRepo) ValidateUserOtp(ctx echo.Context) (string, int32, error) {
 	}
 
 	return token, 200, nil
+}
+
+func (user *UserRepo) GetUserWorkHistory(ctx echo.Context) ([]*models.UserWorkHistoryResponse, int32, error) {
+	userId := ctx.Param("userId")
+	page := ctx.QueryParam("page")
+	limit := ctx.QueryParam("limit")
+
+	if page == "" {
+		page = "1"
+	}
+
+	if limit == "" {
+		limit = "10"
+	}
+
+	pageInt, err := strconv.Atoi(page)
+
+	if err != nil {
+		return nil, 400, errors.New("page paramater must be valid number")
+	}
+
+	if pageInt <= 0 {
+		pageInt = 1 //default page
+	}
+
+	limitInt, err := strconv.Atoi(limit)
+
+	if err != nil {
+		return nil, 400, errors.New("limit parameter must be valid number")
+	}
+
+	if limitInt <= 0 {
+		limitInt = 10 //default limit
+	}
+
+	offset := (pageInt - 1) * limitInt
+
+	workHistory, err := user.dbRepo.GetUserWorkHistory(userId, uint32(limitInt), uint32(offset))
+
+	if err != nil {
+		log.Println("error occurred with database, Error: ", err.Error())
+		return nil, 500, errors.New("internal server error")
+	}
+
+	if workHistory == nil {
+		return nil, 404, errors.New("empty user work history")
+	}
+
+	return workHistory, 200, nil
+
 }

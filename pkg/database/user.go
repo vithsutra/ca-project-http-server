@@ -478,3 +478,44 @@ func (repo *PostgresRepo) GetUserDetailsForValidateOtp(email string) (string, st
 	err := repo.pool.QueryRow(context.Background(), query, email).Scan(&userId, &userName)
 	return userId, userName, err
 }
+
+func (repo *PostgresRepo) GetUserWorkHistory(userId string, limit uint32, offset uint32) ([]*models.UserWorkHistoryResponse, error) {
+	query := `SELECT 
+					work_date,
+					login_time,
+					logout_time,
+					latitude,
+					longitude,
+					uploaded_work,
+					created_at
+			 FROM users_history WHERE user_id=$1 ORDER BY created_at DESC LIMIT $2 OFFSET $3`
+
+	var usersWorkHistory []*models.UserWorkHistoryResponse
+
+	rows, err := repo.pool.Query(context.Background(), query, userId, limit, offset)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		var userWorkHistory models.UserWorkHistoryResponse
+
+		if err := rows.Scan(
+			&userWorkHistory.WorkDate,
+			&userWorkHistory.LoginTime,
+			&userWorkHistory.LogoutTime,
+			&userWorkHistory.Latitude,
+			&userWorkHistory.Longitude,
+			&userWorkHistory.UploadedWork,
+			&userWorkHistory.TimeStamp,
+		); err != nil {
+			return nil, err
+		}
+
+		usersWorkHistory = append(usersWorkHistory, &userWorkHistory)
+	}
+
+	return usersWorkHistory, nil
+
+}

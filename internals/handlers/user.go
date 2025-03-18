@@ -381,3 +381,25 @@ func (h *userHandler) ValidateUserOtpHandler(ctx echo.Context) error {
 	ctx.JSON(int(statusCode), response)
 	return nil
 }
+
+func (h *userHandler) GetUserWorkHistoryHandler(ctx echo.Context) error {
+	history, statusCode, err := h.repo.GetUserWorkHistory(ctx)
+
+	if err != nil {
+		response := &models.ErrorResponse{
+			Status: "error",
+			Error:  err.Error(),
+		}
+		ctx.JSON(int(statusCode), response)
+		return err
+	}
+
+	response := &models.SuccessResponse{
+		Status:  "success",
+		Message: "successfully fetched user workhistory",
+		Data:    history,
+	}
+
+	ctx.JSON(int(statusCode), response)
+	return nil
+}

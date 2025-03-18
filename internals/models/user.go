@@ -71,6 +71,16 @@ type UserWorkHistory struct {
 	UploadedWork string
 }
 
+type UserWorkHistoryResponse struct {
+	WorkDate     string    `json:"work_date"`
+	LoginTime    string    `json:"login_time"`
+	LogoutTime   string    `json:"logout_time"`
+	Latitude     string    `json:"latitude"`
+	Longitude    string    `json:"longitude"`
+	UploadedWork string    `json:"uploaded_work"`
+	TimeStamp    time.Time `json:"timestamp"`
+}
+
 type UserWorkLogoutRequest struct {
 	UserId     string `json:"user_id" validate:"required"`
 	LogoutDate string `json:"date" validate:"required,date"`
@@ -151,6 +161,11 @@ type UserValidateOtpResponse struct {
 	Token string `json:"token"`
 }
 
+type UserAttendanceSyncRequest struct {
+	UserId string `json:"user_id" validate:"required"`
+	Date   string `json:"date" validate:"required,date"`
+}
+
 type UserDatabaseInterface interface {
 	CheckUserEmailExists(email string) (bool, error)
 	CreateUser(user *User) error
@@ -178,6 +193,7 @@ type UserDatabaseInterface interface {
 	ClearOtp(email string, otp string) error
 	CheckOtpExists(email string, otp string) (bool, error)
 	GetUserDetailsForValidateOtp(email string) (string, string, error)
+	GetUserWorkHistory(userId string, limit uint32, offset uint32) ([]*UserWorkHistoryResponse, error)
 }
 
 type UserStorageInterface interface {
