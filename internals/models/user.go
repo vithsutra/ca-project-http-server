@@ -29,6 +29,20 @@ type CreateUserRequest struct {
 	Position    string `json:"position" validate:"required"`
 }
 
+type UserProfileDetailsResponse struct {
+	Name         string    `json:"name"`
+	Dob          string    `json:"dob"`
+	Email        string    `json:"email"`
+	PhoneNumber  string    `json:"phone_number"`
+	ProfileUrl   string    `json:"profile_url"`
+	CategoryId   string    `json:"category_id"`
+	CategoryName string    `json:"category_name"`
+	LoginStatus  bool      `json:"login_status"`
+	Latitude     string    `json:"latitude"`
+	Longitude    string    `json:"longitude"`
+	UpdatedAt    time.Time `json:"updated_at"`
+}
+
 type UserResponse struct {
 	UserId       string `json:"user_id"`
 	Name         string `json:"name"`
@@ -169,6 +183,7 @@ type UserAttendanceSyncRequest struct {
 type UserDatabaseInterface interface {
 	CheckUserEmailExists(email string) (bool, error)
 	CreateUser(user *User) error
+	GetUserProfileDetails(userId string) (*UserProfileDetailsResponse, error)
 	GetUsers(adminId string) ([]*UserResponse, error)
 	CheckUserIdExists(userId string) (bool, error)
 	DeleteUser(userId string) error
@@ -179,7 +194,7 @@ type UserDatabaseInterface interface {
 	UserWorkLogout(userWorkLogoutRequest *UserWorkLogoutRequest) error
 	CheckUserPendingLeaveExists(userId string) (bool, error)
 	ApplyUserLeave(userLeave *UserLeave) error
-	GetUserLeaves(userId string, leaveStatus string) ([]*UserLeaveResponse, error)
+	GetUserLeaves(userId string, leaveStatus string, limit uint32, offset uint32) ([]*UserLeaveResponse, error)
 	CheckLeaveIdExists(leaveId string) (bool, error)
 	CheckPendingLeaveExistsByLeaveId(leaveId string) (bool, error)
 	CancelUserLeave(leaveId string, userType string) error
@@ -201,6 +216,6 @@ type UserStorageInterface interface {
 	DeleteUserProfilePicture(fileName string) error
 }
 
-type EmailService interface {
+type UserEmailServiceInterface interface {
 	SendEmail(data []byte) error
 }

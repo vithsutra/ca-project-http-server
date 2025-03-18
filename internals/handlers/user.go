@@ -37,6 +37,29 @@ func (h *userHandler) CreateUserHandler(ctx echo.Context) error {
 	return nil
 }
 
+func (h *userHandler) GetUserProfileDetailsHandler(ctx echo.Context) error {
+	details, statusCode, err := h.repo.GetUserProfileDetails(ctx)
+
+	if err != nil {
+		response := &models.ErrorResponse{
+			Status: "error",
+			Error:  err.Error(),
+		}
+		ctx.JSON(int(statusCode), response)
+		return err
+	}
+
+	response := models.SuccessResponse{
+		Status:  "success",
+		Message: "user profile details fetched successfull",
+		Data:    details,
+	}
+
+	ctx.JSON(int(statusCode), response)
+
+	return nil
+}
+
 func (h *userHandler) GetUsers(ctx echo.Context) error {
 	usersReponse, statusCode, err := h.repo.GetUsers(ctx)
 

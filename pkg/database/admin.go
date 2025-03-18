@@ -6,6 +6,13 @@ import (
 	"github.com/vithsutra/ca_project_http_server/internals/models"
 )
 
+func (repo *PostgresRepo) CheckAdminIdExists(adminId string) (bool, error) {
+	query := `SELECT EXISTS ( SELECT 1 FROM admins WHERE admin_id=$1 )`
+	var exists bool
+	err := repo.pool.QueryRow(context.Background(), query, adminId).Scan(&exists)
+	return exists, err
+}
+
 func (repo *PostgresRepo) CreateAdmin(admin *models.Admin) error {
 	query := `INSERT INTO admins (
 				admin_id,
@@ -32,6 +39,36 @@ func (repo *PostgresRepo) CreateAdmin(admin *models.Admin) error {
 	)
 
 	return err
+}
+
+func (repo *PostgresRepo) GetAdminProfileDetails(adminId string) (*models.AdminProfileDetailsResponse, error) {
+	query := `SELECT 
+				name,
+				dob,
+				email,
+				phone_number,
+				profile_url,
+				position,
+				updated_at
+			FROM admins WHERE admin_id=$1`
+
+	var details models.AdminProfileDetailsResponse
+
+	err := repo.pool.QueryRow(
+		context.Background(),
+		query,
+		adminId,
+	).Scan(
+		&details.Name,
+		&details.Dob,
+		&details.Email,
+		&details.PhoneNumber,
+		&details.ProfileUrl,
+		&details.Position,
+		&details.UpdatedAt,
+	)
+
+	return &details, err
 }
 
 func (repo *PostgresRepo) GetAllAdmins() ([]*models.AdminResponse, error) {
@@ -83,4 +120,46 @@ func (repo *PostgresRepo) GetAdminForLogin(email string) (string, string, string
 	var name string
 	err := repo.pool.QueryRow(context.Background(), query, email).Scan(&adminId, &name, &password)
 	return adminId, name, password, err
+}
+
+func (repo *PostgresRepo) UpdateAdminNewPassword(adminId string, password string) error {
+	query := `UPDATE admins SET password=$2 WHERE admin_id=$1`
+	_, err := repo.pool.Exec(context.Background(), query, adminId, password)
+	return err
+}
+
+func (repo *PostgresRepo) UpdateAdminProfileInfo(updateRequest *models.AdminProfileUpdateRequest) error {
+	query := `UPDATE admins SET 
+				name=$2,
+				dob=$3,
+				email=$4,
+				phone_number=$5,
+				position=$6
+			WHERE admin_id=$1`
+
+	_, err := repo.pool.Exec(
+		context.Background(),
+		query,
+		updateRequest.AdminId,
+		updateRequest.Name,
+		updateRequest.Dob,
+		updateRequest.Email,
+		updateRequest.PhoneNumber,
+		updateRequest.Position,
+	)
+
+	return err
+}
+
+func (repo *PostgresRepo) GetPrevAdminProfileUrl(adminId string) (string, error) {
+	query := `SELECT profile_url FROM admins WHERE admin_id=$1`
+	var profileUrl string
+	err := repo.pool.QueryRow(context.Background(), query, adminId).Scan(&profileUrl)
+	return profileUrl, err
+}
+
+func (repo PostgresRepo) UpdateAdminProfilePictureUrl(adminId string, url string) error {
+	query := `UPDATE admins SET profile_url=$2 WHERE admin_id=$1`
+	_, err := repo.pool.Exec(context.Background(), query, adminId, url)
+	return err
 }

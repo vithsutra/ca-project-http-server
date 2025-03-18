@@ -45,6 +45,43 @@ func (repo *PostgresRepo) CreateUser(user *models.User) error {
 	return err
 }
 
+func (repo *PostgresRepo) GetUserProfileDetails(userId string) (*models.UserProfileDetailsResponse, error) {
+	query := `SELECT 
+				u.name,
+				u.dob,
+				u.email,
+				u.phone_number,
+				u.profile_url,
+				u.category_id,
+				ec.category_name,
+				u.login_status,
+				u.latitude,
+				u.longitude,
+				u.updated_at
+			FROM users u
+			JOIN employee_category ec ON u.category_id=ec.category_id
+			WHERE u.user_id=$1
+			 `
+
+	var details models.UserProfileDetailsResponse
+
+	err := repo.pool.QueryRow(context.Background(), query, userId).Scan(
+		&details.Name,
+		&details.Dob,
+		&details.Email,
+		&details.PhoneNumber,
+		&details.ProfileUrl,
+		&details.CategoryId,
+		&details.CategoryName,
+		&details.LoginStatus,
+		&details.Latitude,
+		&details.Longitude,
+		&details.UpdatedAt,
+	)
+
+	return &details, err
+}
+
 func (repo *PostgresRepo) GetUsers(adminId string) ([]*models.UserResponse, error) {
 	query := `SELECT 
 				u.user_id,
@@ -300,7 +337,7 @@ func (repo *PostgresRepo) ApplyUserLeave(userLeave *models.UserLeave) error {
 	return err
 }
 
-func (repo *PostgresRepo) GetUserLeaves(userId string, leaveStatus string) ([]*models.UserLeaveResponse, error) {
+func (repo *PostgresRepo) GetUserLeaves(userId string, leaveStatus string, limit uint32, offset uint32) ([]*models.UserLeaveResponse, error) {
 	query := ""
 	if leaveStatus == "pending" {
 		query = `SELECT 
@@ -311,7 +348,7 @@ func (repo *PostgresRepo) GetUserLeaves(userId string, leaveStatus string) ([]*m
 					status,
 					status_updated_by,
 					updated_at
-				FROM users_leave_history WHERE user_id=$1 AND status='pending'
+				FROM users_leave_history WHERE user_id=$1 AND status='pending ORDER BY updated_at DESC LIMIT $2 OFFSET $3'
 				`
 	} else if leaveStatus == "granted" {
 		query = `SELECT 
@@ -322,7 +359,7 @@ func (repo *PostgresRepo) GetUserLeaves(userId string, leaveStatus string) ([]*m
 					status,
 					status_updated_by,
 					updated_at
-				FROM users_leave_history WHERE user_id=$1 AND status='granted'`
+				FROM users_leave_history WHERE user_id=$1 AND status='granted' ORDER BY updated_at DESC LIMIT $2 OFFSET $3`
 	} else if leaveStatus == "canceled" {
 		query = `SELECT 
 					leave_id,
@@ -332,7 +369,7 @@ func (repo *PostgresRepo) GetUserLeaves(userId string, leaveStatus string) ([]*m
 					status,
 					status_updated_by,
 					updated_at
-				FROM users_leave_history WHERE user_id=$1 AND status='canceled'`
+				FROM users_leave_history WHERE user_id=$1 AND status='canceled' ORDER BY updated_at DESC LIMIT $2 OFFSET $3`
 	} else {
 		query = `SELECT 
 					leave_id,
@@ -342,10 +379,10 @@ func (repo *PostgresRepo) GetUserLeaves(userId string, leaveStatus string) ([]*m
 					status,
 					status_updated_by,
 					updated_at
-				FROM users_leave_history WHERE user_id=$1`
+				FROM users_leave_history WHERE user_id=$1 ORDER BY updated_at DESC LIMIT $2 OFFSET $3`
 	}
 
-	rows, err := repo.pool.Query(context.Background(), query, userId)
+	rows, err := repo.pool.Query(context.Background(), query, userId, limit, offset)
 
 	if err != nil {
 		return nil, err

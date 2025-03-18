@@ -20,13 +20,13 @@ import (
 type UserRepo struct {
 	dbRepo           models.UserDatabaseInterface
 	storageRepo      models.UserStorageInterface
-	emailServiceRepo models.EmailService
+	emailServiceRepo models.UserEmailServiceInterface
 }
 
 func NewUserRepo(
 	dbRepo models.UserDatabaseInterface,
 	storageRepo models.UserStorageInterface,
-	emailServiceRepo models.EmailService,
+	emailServiceRepo models.UserEmailServiceInterface,
 ) *UserRepo {
 	return &UserRepo{
 		dbRepo,
@@ -102,7 +102,7 @@ func (repo *UserRepo) CreateUser(ctx echo.Context) (int32, error) {
 	jsonBytes, err := json.Marshal(userWelcomeEmailFormat)
 
 	if err != nil {
-		log.Println("error occurred while encding the json, Error:", err.Error())
+		log.Println("error occurred while encoding the json, Error:", err.Error())
 		return 500, errors.New("internal server error occurred")
 	}
 
@@ -112,6 +112,31 @@ func (repo *UserRepo) CreateUser(ctx echo.Context) (int32, error) {
 	}
 
 	return 201, nil
+}
+
+func (repo *UserRepo) GetUserProfileDetails(ctx echo.Context) (*models.UserProfileDetailsResponse, int32, error) {
+	userId := ctx.Param("userId")
+
+	userIdExists, err := repo.dbRepo.CheckUserIdExists(userId)
+
+	if err != nil {
+		log.Println("error occurred with database, Error: ", err.Error())
+		return nil, 500, errors.New("internal server error occurred")
+	}
+
+	if !userIdExists {
+		return nil, 400, errors.New("user id not exists")
+	}
+
+	details, err := repo.dbRepo.GetUserProfileDetails(userId)
+
+	if err != nil {
+		log.Println("error occurred with database, Error: ", err.Error())
+		return nil, 500, errors.New("internal server error")
+	}
+
+	return details, 200, nil
+
 }
 
 func (repo *UserRepo) GetUsers(ctx echo.Context) ([]*models.UserResponse, int32, error) {
@@ -342,6 +367,38 @@ func (repo *UserRepo) ApplyUserLeave(ctx echo.Context) (int32, error) {
 func (repo *UserRepo) GetUserLeaves(ctx echo.Context) ([]*models.UserLeaveResponse, int32, error) {
 	userId := ctx.Param("userId")
 	leaveStatus := ctx.QueryParam("status")
+	page := ctx.QueryParam("page")
+	limit := ctx.QueryParam("limit")
+
+	if page == "" {
+		page = "1"
+	}
+
+	if limit == "" {
+		limit = "10"
+	}
+
+	pageInt, err := strconv.Atoi(page)
+
+	if err != nil {
+		return nil, 400, errors.New("page paramater must be valid number")
+	}
+
+	if pageInt <= 0 {
+		pageInt = 1 //default page
+	}
+
+	limitInt, err := strconv.Atoi(limit)
+
+	if err != nil {
+		return nil, 400, errors.New("limit parameter must be valid number")
+	}
+
+	if limitInt <= 0 {
+		limitInt = 10 //default limit
+	}
+
+	offset := (pageInt - 1) * limitInt
 
 	userIdExists, err := repo.dbRepo.CheckUserIdExists(userId)
 
@@ -358,7 +415,7 @@ func (repo *UserRepo) GetUserLeaves(ctx echo.Context) ([]*models.UserLeaveRespon
 		return nil, 400, errors.New("invalid leave status")
 	}
 
-	userLeaveResponses, err := repo.dbRepo.GetUserLeaves(userId, leaveStatus)
+	userLeaveResponses, err := repo.dbRepo.GetUserLeaves(userId, leaveStatus, uint32(limitInt), uint32(offset))
 
 	if err != nil {
 		log.Println("error occurred with database, Error: ", err.Error())
@@ -376,11 +433,10 @@ func (repo *UserRepo) GetUserLeaves(ctx echo.Context) ([]*models.UserLeaveRespon
 func (repo *UserRepo) CancelUserLeave(ctx echo.Context) (int32, error) {
 	userId := ctx.Param("userId")
 	leaveId := ctx.Param("leaveId")
-	userType := ctx.QueryParam("user_type")
 
-	if userType != "user" && userType != "admin" {
-		return 400, errors.New("invalid user type")
-	}
+	requestUrlPath := ctx.Request().URL.Path
+
+	userType := strings.Split(requestUrlPath, "/")[1]
 
 	userIdExists, err := repo.dbRepo.CheckUserIdExists(userId)
 

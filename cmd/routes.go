@@ -42,6 +42,11 @@ func InitHttpRoutes(e *echo.Echo,
 	//admin routes
 	admin := e.Group("/admin")
 	admin.Use(middlewares.JwtMiddleware())
+	admin.GET("/get/profile_details/:adminId", adminHandler.GetAdminProfileDetailsHandler)
+	admin.PATCH("/update/password/:adminId", adminHandler.UpdateAdminNewPasswordHandler)
+	admin.PUT("/update/profile_info", adminHandler.UpdateAdminProfileInfoHandler)
+	admin.PUT("/update/profile_picture/:adminId", adminHandler.UpdateAdminProfilePictureHandler)
+	admin.DELETE("/delete/profile_picture/:adminId", adminHandler.DeleteAdminProfilePictureHandler)
 	admin.POST("/create/employee_category", employeeCategoryHandler.CreateEmployeeCategoryHandler)
 	admin.GET("/get/employee_categories/:adminId", employeeCategoryHandler.GetEmployeeCategoriesHandler)
 	admin.DELETE("/delete/employee_category/:categoryId", employeeCategoryHandler.DeleteEmployeeCategory)
@@ -56,18 +61,19 @@ func InitHttpRoutes(e *echo.Echo,
 	//user routes
 	user := e.Group("/user")
 	// user.Use(middlewares.JwtMiddleware())
+	user.GET("/get/profile_details/:userId", userHandler.GetUserProfileDetailsHandler)
 	user.POST("/work/login", userHandler.UserWorkLoginHandler)
 	user.POST("/work/logout", userHandler.UserWorkLogoutHandler)
+	user.GET("/get/work_history/:userId", userHandler.GetUserWorkHistoryHandler)
 	user.POST("/apply/leave", userHandler.ApplyUserLeaveHandler)
-	user.PATCH("/cancel/user_leave/:userId/:leaveId", userHandler.CancelUserLeaveHandler)
-	user.GET("/get/user_leaves/:userId", userHandler.GetUserLeavesHandler)
+	user.PATCH("/cancel/leave/:userId/:leaveId", userHandler.CancelUserLeaveHandler)
+	user.GET("/get/leaves/:userId", userHandler.GetUserLeavesHandler)
 	user.PUT("/update/profile_info", userHandler.UserProfileInfoUpdateHandler)
 	user.PUT("/update/profile_picture/:userId", userHandler.UpdateUserProfilePictureHandler)
 	user.PATCH("/delete/profile_picture/:userId", userHandler.DeleteProfilePictureHandler)
 	user.GET("/last_profile_update_time/:userId", userHandler.GetUserLastProfileUpdateTimeHandler)
 	user.POST("/update/password/:userId", userHandler.UpdateUserNewPaswordHandler)
 	user.POST("/validate/otp", userHandler.ValidateUserOtpHandler)
-	user.GET("/get/work_history/:userId", userHandler.GetUserWorkHistoryHandler)
 
 	return e
 }

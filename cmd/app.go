@@ -22,7 +22,7 @@ func Start(dbConnPool *connection, awsS3Connection *s3Connection, rabbitmqConn *
 
 	rootRepo := repository.NewRootRepo(postgresRepo)
 
-	adminRepo := repository.NewAdminRepo(postgresRepo)
+	adminRepo := repository.NewAdminRepo(postgresRepo, awsS3Repo, rabbitmqRepo)
 
 	employeeCategoryRepo := repository.NewEmployeeCategoryRepo(postgresRepo)
 

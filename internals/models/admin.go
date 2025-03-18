@@ -1,6 +1,9 @@
 package models
 
-import "time"
+import (
+	"io"
+	"time"
+)
 
 type Admin struct {
 	AdminId     string
@@ -34,6 +37,16 @@ type AdminResponse struct {
 	UpdatedAt   time.Time `json:"updated_at"`
 }
 
+type AdminProfileDetailsResponse struct {
+	Name        string    `json:"name"`
+	Dob         string    `json:"dob"`
+	Email       string    `json:"email"`
+	PhoneNumber string    `json:"phone_number"`
+	ProfileUrl  string    `json:"profile_url"`
+	Position    string    `json:"position"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
 type AdminLoginRequest struct {
 	Email    string `json:"email" validate:"required,email"`
 	Password string `json:"password" validate:"required"`
@@ -43,9 +56,37 @@ type AdminLoginResponse struct {
 	Token string `json:"token"`
 }
 
+type AdminNewPasswordUpdateRequest struct {
+	Password string `json:"password" validate:"required,password"`
+}
+
+type AdminProfileUpdateRequest struct {
+	AdminId     string `json:"admin_id" validate:"required"`
+	Name        string `json:"name" validate:"required"`
+	Dob         string `json:"dob" validate:"required"`
+	Email       string `json:"email" validate:"required,email"`
+	PhoneNumber string `json:"phone_number" validate:"required"`
+	Position    string `json:"position" validate:"required"`
+}
+
 type AdminInterface interface {
+	CheckAdminIdExists(adminId string) (bool, error)
 	CreateAdmin(admin *Admin) error
+	GetPrevAdminProfileUrl(adminId string) (string, error)
+	UpdateAdminProfilePictureUrl(adminId string, url string) error
+	UpdateAdminNewPassword(adminId string, password string) error
+	GetAdminProfileDetails(adminId string) (*AdminProfileDetailsResponse, error)
 	GetAllAdmins() ([]*AdminResponse, error)
 	CheckAdminEmailsExists(email string) (bool, error)
 	GetAdminForLogin(email string) (string, string, string, error)
+	UpdateAdminProfileInfo(updateRequest *AdminProfileUpdateRequest) error
+}
+
+type AdminStorageInterface interface {
+	UploadAdminProfilePicture(fileName string, file io.ReadSeeker) error
+	DeleteAdminProfilePicture(fileName string) error
+}
+
+type AdminEmailServiceInterface interface {
+	SendEmail(data []byte) error
 }
