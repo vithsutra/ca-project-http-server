@@ -27,7 +27,7 @@ func InitHttpRoutes(e *echo.Echo,
 		return c.NoContent(http.StatusOK)
 	})
 	//root routes
-	root := e.Group("/root")
+	root := e.Group("/r")
 	root.Use(middlewares.RootMiddleware())
 	root.POST("/create/admin", rootHandler.CreateAdminHandler)
 	root.GET("/get/admins", rootHandler.GetAllAdminsHandler)
