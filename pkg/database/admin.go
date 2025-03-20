@@ -130,7 +130,7 @@ func (repo *PostgresRepo) UpdateAdminNewPassword(adminId string, password string
 }
 
 func (repo *PostgresRepo) StoreAdminOtp(email string, otp string, expireTime time.Time) error {
-	query := `INSERT INTO (email,otp,expire_time) admins_otp VALUES ($1,$2,$3)`
+	query := `INSERT INTO admin_otps (email,otp,expire_time)  VALUES ($1,$2,$3)`
 	_, err := repo.pool.Exec(
 		context.Background(),
 		query,
