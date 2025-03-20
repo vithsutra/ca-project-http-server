@@ -208,7 +208,7 @@ func (repo *PostgresRepo) UserWorkLogin(userWorkHistory *models.UserWorkHistory)
 		userWorkHistory.LoginTime,
 		userWorkHistory.LogoutTime,
 		userWorkHistory.Latitude,
-		userWorkHistory.LoginTime,
+		userWorkHistory.Longitude,
 		userWorkHistory.UploadedWork,
 	); err != nil {
 		tx.Rollback(context.Background())
