@@ -1,11 +1,13 @@
 package repository
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
@@ -72,6 +74,131 @@ func (repo *AdminRepo) AdminLogin(ctx echo.Context) (*models.AdminLoginResponse,
 	return &models.AdminLoginResponse{
 		Token: token,
 	}, 200, nil
+
+}
+
+func (repo *AdminRepo) AdminForgotPassword(ctx echo.Context) (int32, error) {
+	adminForgotPasswordRequest := new(models.AdminForgotPasswordRequest)
+
+	if err := ctx.Bind(adminForgotPasswordRequest); err != nil {
+		return 400, errors.New("invalid json request body")
+	}
+
+	validation := validator.New()
+
+	if err := validation.Struct(adminForgotPasswordRequest); err != nil {
+		return 400, errors.New("invalid request body format")
+	}
+
+	emailExists, err := repo.dbRepo.CheckAdminEmailsExists(adminForgotPasswordRequest.Email)
+
+	if err != nil {
+		log.Println("error occurred with database, Error: ", err.Error())
+		return 500, errors.New("internal server error occurred")
+	}
+
+	if !emailExists {
+		return 400, errors.New("user email not exists")
+	}
+
+	otp, err := utils.GenerateOTP()
+
+	if err != nil {
+		log.Println("error occurred while generating the otp, Error: ", err.Error())
+		return 500, errors.New("internal server error occurred")
+	}
+
+	expireTime := time.Now().Add(5 * time.Minute)
+
+	if err := repo.dbRepo.StoreAdminOtp(adminForgotPasswordRequest.Email, otp, expireTime); err != nil {
+		log.Println("error occurred with database, Error: ", err.Error())
+		return 500, errors.New("internal server error occurred")
+	}
+
+	otpMessage := new(models.AdminOtpEmailFormat)
+
+	otpMessage.To = adminForgotPasswordRequest.Email
+	otpMessage.Subject = "Verification Code to Reset Password"
+	otpMessage.EmailType = "otp"
+	otpMessage.Data = map[string]string{
+		"otp":         otp,
+		"expire_time": "5",
+	}
+
+	jsonBytes, err := json.Marshal(otpMessage)
+
+	if err != nil {
+		log.Println("error occurred while encoding the otp message to json, Error: ", err.Error())
+		return 500, errors.New("internal server error was occurred")
+	}
+
+	if err := repo.emailServieRepo.SendEmail(jsonBytes); err != nil {
+		log.Println("Error occurred while sending the email, Error: ", err.Error())
+		return 500, errors.New("internal server error was occurred")
+	}
+
+	//clear otp after 5 mins
+	go func() {
+		time.Sleep(5 * time.Minute)
+		if err := repo.dbRepo.DeleteAdminOtp(adminForgotPasswordRequest.Email, otp); err != nil {
+			log.Println("Error occurred while clearing the admin otp, Error: ", err.Error())
+			return
+		}
+	}()
+
+	return 200, nil
+}
+
+func (repo *AdminRepo) ValidateAdminOtp(ctx echo.Context) (string, int32, error) {
+	adminOtpValidateRequest := new(models.AdminOtpValidateRequest)
+
+	if err := ctx.Bind(adminOtpValidateRequest); err != nil {
+		return "", 400, errors.New("invalid json request body")
+	}
+
+	validation := validator.New()
+
+	if err := validation.Struct(adminOtpValidateRequest); err != nil {
+		return "", 400, errors.New("invalid request body")
+	}
+
+	emailExists, err := repo.dbRepo.CheckAdminEmailsExists(adminOtpValidateRequest.Email)
+
+	if err != nil {
+		log.Println("error occurred with database, Error: ", err.Error())
+		return "", 500, errors.New("internal server error occurred")
+	}
+
+	if !emailExists {
+		return "", 400, errors.New("email not exists")
+	}
+
+	isOtpValid, err := repo.dbRepo.ValidateAdminOtp(adminOtpValidateRequest.Email, adminOtpValidateRequest.Otp)
+
+	if err != nil {
+		log.Println("error occurred with database, Error: ", err.Error())
+		return "", 500, errors.New("internal server error occurred")
+	}
+
+	if !isOtpValid {
+		return "", 401, errors.New("invalid otp")
+	}
+
+	adminId, adminName, err := repo.dbRepo.GetAdminDetailsForValidOtp(adminOtpValidateRequest.Email)
+
+	if err != nil {
+		log.Println("error occurred with database, Error: ", err.Error())
+		return "", 500, errors.New("internal server error occurred")
+	}
+
+	token, err := utils.GenerateToken(adminId, adminOtpValidateRequest.Email, adminName)
+
+	if err != nil {
+		log.Println("error occurred while generating the token, Error: ", err.Error())
+		return "", 500, errors.New("internal server error")
+	}
+
+	return token, 200, nil
 
 }
 

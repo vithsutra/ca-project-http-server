@@ -337,6 +337,63 @@ func (repo *PostgresRepo) ApplyUserLeave(userLeave *models.UserLeave) error {
 	return err
 }
 
+func (repo *PostgresRepo) GetAllUsersPendingLeaves(adminId string, limit uint32, offset uint32) ([]*models.UserPendingLeaveResponse, error) {
+
+	query := `SELECT 
+				u.user_id,
+				u.name,
+				u.email,
+				uc.category_name,
+				uh.leave_id,
+				uh.leave_from,
+				uh.leave_to,
+				uh.leave_reason,
+				uh.created_at
+			FROM users u
+			JOIN users_leave_history uh ON u.user_id=uh.user_id
+			JOIN employee_category uc ON u.category_id=uc.category_id
+			WHERE u.admin_id=$1 AND uh.status = 'pending' ORDER BY uh.created_at DESC LIMIT $2 OFFSET $3`
+
+	rows, err := repo.pool.Query(
+		context.Background(),
+		query,
+		adminId,
+		limit,
+		offset,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var pendingLeaves []*models.UserPendingLeaveResponse
+
+	for rows.Next() {
+		var pendingLeave models.UserPendingLeaveResponse
+
+		if err := rows.Scan(
+			&pendingLeave.UserId,
+			&pendingLeave.UserName,
+			&pendingLeave.UserEmail,
+			&pendingLeave.UserCategory,
+			&pendingLeave.LeaveId,
+			&pendingLeave.LeaveFrom,
+			&pendingLeave.LeaveTo,
+			&pendingLeave.LeaveReason,
+			&pendingLeave.LeaveCreatedAt,
+		); err != nil {
+			return nil, err
+		}
+
+		pendingLeaves = append(pendingLeaves, &pendingLeave)
+	}
+
+	return pendingLeaves, nil
+
+}
+
 func (repo *PostgresRepo) GetUserLeaves(userId string, leaveStatus string, limit uint32, offset uint32) ([]*models.UserLeaveResponse, error) {
 	query := ""
 	if leaveStatus == "pending" {

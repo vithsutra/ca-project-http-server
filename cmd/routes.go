@@ -36,8 +36,10 @@ func InitHttpRoutes(e *echo.Echo,
 	auth := e.Group("/auth")
 	auth.POST("/login/admin", adminHandler.AdminLoginHandler)
 	auth.POST("/login/user", userHandler.UserLoginHandler)
-	auth.POST("/forgot/password", userHandler.UserForgotPasswordHandler)
-	auth.POST("/validate/otp", userHandler.ValidateUserOtpHandler)
+	auth.POST("/admin/forgot/password", adminHandler.AdminForgotPasswordHandler)
+	auth.POST("/admin/validate/otp", adminHandler.AdminValidateOtpHandler)
+	auth.POST("/user/forgot/password", userHandler.UserForgotPasswordHandler)
+	auth.POST("/user/validate/otp", userHandler.ValidateUserOtpHandler)
 
 	//admin routes
 	admin := e.Group("/admin")
@@ -54,6 +56,7 @@ func InitHttpRoutes(e *echo.Echo,
 	admin.GET("/get/users/:adminId", userHandler.GetUsers)
 	admin.DELETE("/delete/user/:userId", userHandler.DeleteUser)
 	admin.GET("/get/user_work_history/:userId", userHandler.GetUserWorkHistoryHandler)
+	admin.GET("/get/users_pending_leaves/:adminId", userHandler.GetUserPendingLeavesHandler)
 	admin.GET("/get/user_leaves/:userId", userHandler.GetUserLeavesHandler)
 	admin.PATCH("/cancel/user_leave/:userId/:leaveId", userHandler.CancelUserLeaveHandler)
 	admin.PATCH("/grant/user_leave/:leaveId", userHandler.GrantUserLeaveHandler)

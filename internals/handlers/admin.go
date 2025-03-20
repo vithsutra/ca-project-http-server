@@ -39,6 +39,57 @@ func (h *adminHandler) AdminLoginHandler(ctx echo.Context) error {
 	return nil
 }
 
+func (h *adminHandler) AdminForgotPasswordHandler(ctx echo.Context) error {
+	statusCode, err := h.adminRepo.AdminForgotPassword(ctx)
+
+	if err != nil {
+		response := models.ErrorResponse{
+			Status: "error",
+			Error:  err.Error(),
+		}
+
+		ctx.JSON(int(statusCode), response)
+		return err
+	}
+
+	response := models.SuccessResponse{
+		Status:  "success",
+		Message: "otp sent to the registered email successfully",
+	}
+
+	ctx.JSON(int(statusCode), response)
+
+	return nil
+}
+
+func (h *adminHandler) AdminValidateOtpHandler(ctx echo.Context) error {
+
+	token, statusCode, err := h.adminRepo.ValidateAdminOtp(ctx)
+
+	if err != nil {
+		response := models.ErrorResponse{
+			Status: "error",
+			Error:  err.Error(),
+		}
+
+		ctx.JSON(int(statusCode), response)
+		return err
+	}
+
+	response := models.SuccessResponse{
+		Status:  "success",
+		Message: "otp validation successful",
+		Data: models.AdminValidateOtpResponse{
+			Token: token,
+		},
+	}
+
+	ctx.JSON(int(statusCode), response)
+
+	return nil
+
+}
+
 func (h *adminHandler) GetAdminProfileDetailsHandler(ctx echo.Context) error {
 	details, statusCode, err := h.adminRepo.GetAdminProfileDetails(ctx)
 

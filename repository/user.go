@@ -364,6 +364,55 @@ func (repo *UserRepo) ApplyUserLeave(ctx echo.Context) (int32, error) {
 	return 200, nil
 }
 
+func (repo *UserRepo) GetAllUsersPendingLeaves(ctx echo.Context) ([]*models.UserPendingLeaveResponse, int32, error) {
+	adminId := ctx.Param("adminId")
+	page := ctx.QueryParam("page")
+	limit := ctx.QueryParam("limit")
+
+	if page == "" {
+		page = "1"
+	}
+
+	if limit == "" {
+		limit = "10"
+	}
+
+	pageInt, err := strconv.Atoi(page)
+
+	if err != nil {
+		return nil, 400, errors.New("page paramater must be valid number")
+	}
+
+	if pageInt <= 0 {
+		pageInt = 1 //default page
+	}
+
+	limitInt, err := strconv.Atoi(limit)
+
+	if err != nil {
+		return nil, 400, errors.New("limit parameter must be valid number")
+	}
+
+	if limitInt <= 0 {
+		limitInt = 10 //default limit
+	}
+
+	offset := (pageInt - 1) * limitInt
+
+	pendingLeaves, err := repo.dbRepo.GetAllUsersPendingLeaves(adminId, uint32(limitInt), uint32(offset))
+
+	if err != nil {
+		log.Println("error occurred with database, Error: ", err.Error())
+		return nil, 500, errors.New("internal server error occurred")
+	}
+
+	if pendingLeaves == nil {
+		return nil, 404, errors.New("users pending leaves was empty")
+	}
+
+	return pendingLeaves, 200, nil
+}
+
 func (repo *UserRepo) GetUserLeaves(ctx echo.Context) ([]*models.UserLeaveResponse, int32, error) {
 	userId := ctx.Param("userId")
 	leaveStatus := ctx.QueryParam("status")
@@ -793,7 +842,7 @@ func (repo *UserRepo) UserForgotPassword(ctx echo.Context) (int32, error) {
 	go func() {
 		time.Sleep(time.Minute * 5)
 		if err := repo.dbRepo.ClearOtp(userForgotPasswordRequest.Email, otp); err != nil {
-			log.Println("Error occurred while clearing the otp, Error: ", err.Error())
+			log.Println("Error occurred while clearing the user otp, Error: ", err.Error())
 			return
 		}
 	}()

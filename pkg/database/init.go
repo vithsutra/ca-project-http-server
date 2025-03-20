@@ -115,7 +115,13 @@ func (repo *PostgresRepo) Init() error {
 			created_at TIMESTAMPTZ DEFAULT NOW(),
 			FOREIGN KEY (email) REFERENCES users (email) ON DELETE CASCADE
 		)`,
-
+		`CREATE TABLE IF NOT EXISTS admin_otps (
+			email VARCHAR(255) NOT NULL,
+			otp VARCHAR(255) NOT NULL,
+			expire_time TIMESTAMPTZ NOT NULL,
+			created_at TIMESTAMPTZ DEFAULT NOW(),
+			FOREIGN KEY (email) REFERENCES admins (email) ON DELETE CASCADE
+		)`,
 		`DO $$ 
 		 BEGIN
     		IF NOT EXISTS (

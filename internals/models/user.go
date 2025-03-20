@@ -130,6 +130,18 @@ type UserLeaveResponse struct {
 	LeaveStatusUpdtedTime  string `json:"leave_status_updated_time"`
 }
 
+type UserPendingLeaveResponse struct {
+	UserId         string    `json:"user_id"`
+	UserName       string    `json:"user_name"`
+	UserEmail      string    `json:"user_email"`
+	UserCategory   string    `json:"user_category"`
+	LeaveId        string    `json:"leave_id"`
+	LeaveFrom      string    `json:"leave_from"`
+	LeaveTo        string    `json:"leave_to"`
+	LeaveReason    string    `json:"leave_reason"`
+	LeaveCreatedAt time.Time `json:"leave_created_at"`
+}
+
 type UserProfileInfoUpdateRequest struct {
 	UserId      string `json:"user_id" validate:"required"`
 	CategoryId  string `json:"category_id" validate:"required"`
@@ -194,6 +206,7 @@ type UserDatabaseInterface interface {
 	UserWorkLogout(userWorkLogoutRequest *UserWorkLogoutRequest) error
 	CheckUserPendingLeaveExists(userId string) (bool, error)
 	ApplyUserLeave(userLeave *UserLeave) error
+	GetAllUsersPendingLeaves(adminId string, limit uint32, offset uint32) ([]*UserPendingLeaveResponse, error)
 	GetUserLeaves(userId string, leaveStatus string, limit uint32, offset uint32) ([]*UserLeaveResponse, error)
 	CheckLeaveIdExists(leaveId string) (bool, error)
 	CheckPendingLeaveExistsByLeaveId(leaveId string) (bool, error)

@@ -56,6 +56,26 @@ type AdminLoginResponse struct {
 	Token string `json:"token"`
 }
 
+type AdminForgotPasswordRequest struct {
+	Email string `json:"email" validate:"required,email"`
+}
+
+type AdminOtpEmailFormat struct {
+	To        string            `json:"to"`
+	Subject   string            `json:"subject"`
+	EmailType string            `json:"email_type"`
+	Data      map[string]string `json:"data"`
+}
+
+type AdminOtpValidateRequest struct {
+	Email string `json:"email" validate:"required,email"`
+	Otp   string `json:"otp" validate:"required"`
+}
+
+type AdminValidateOtpResponse struct {
+	Token string `json:"token"`
+}
+
 type AdminNewPasswordUpdateRequest struct {
 	Password string `json:"password" validate:"required,password"`
 }
@@ -74,6 +94,10 @@ type AdminInterface interface {
 	CreateAdmin(admin *Admin) error
 	GetPrevAdminProfileUrl(adminId string) (string, error)
 	UpdateAdminProfilePictureUrl(adminId string, url string) error
+	StoreAdminOtp(email string, otp string, expireTime time.Time) error
+	DeleteAdminOtp(email string, otp string) error
+	ValidateAdminOtp(email string, otp string) (bool, error)
+	GetAdminDetailsForValidOtp(email string) (string, string, error)
 	UpdateAdminNewPassword(adminId string, password string) error
 	GetAdminProfileDetails(adminId string) (*AdminProfileDetailsResponse, error)
 	GetAllAdmins() ([]*AdminResponse, error)

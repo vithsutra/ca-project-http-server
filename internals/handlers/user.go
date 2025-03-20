@@ -184,6 +184,29 @@ func (h *userHandler) ApplyUserLeaveHandler(ctx echo.Context) error {
 	return nil
 }
 
+func (h *userHandler) GetUserPendingLeavesHandler(ctx echo.Context) error {
+	pendingLeaves, statusCode, err := h.repo.GetAllUsersPendingLeaves(ctx)
+
+	if err != nil {
+		response := &models.ErrorResponse{
+			Status: "error",
+			Error:  err.Error(),
+		}
+		ctx.JSON(int(statusCode), response)
+		return err
+	}
+
+	response := &models.SuccessResponse{
+		Status:  "success",
+		Message: "users pending leaves fetched successfully",
+		Data:    pendingLeaves,
+	}
+
+	ctx.JSON(int(statusCode), response)
+
+	return nil
+}
+
 func (h *userHandler) GetUserLeavesHandler(ctx echo.Context) error {
 	userLeaves, statusCode, err := h.repo.GetUserLeaves(ctx)
 

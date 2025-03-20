@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"time"
 
 	"github.com/vithsutra/ca_project_http_server/internals/models"
 )
@@ -126,6 +127,79 @@ func (repo *PostgresRepo) UpdateAdminNewPassword(adminId string, password string
 	query := `UPDATE admins SET password=$2 WHERE admin_id=$1`
 	_, err := repo.pool.Exec(context.Background(), query, adminId, password)
 	return err
+}
+
+func (repo *PostgresRepo) StoreAdminOtp(email string, otp string, expireTime time.Time) error {
+	query := `INSERT INTO (email,otp,expire_time) admins_otp VALUES ($1,$2,$3)`
+	_, err := repo.pool.Exec(
+		context.Background(),
+		query,
+		email,
+		otp,
+		expireTime,
+	)
+	return err
+}
+
+func (repo *PostgresRepo) DeleteAdminOtp(email string, otp string) error {
+	query := `DELETE FROM admin_otps WHERE email=$1 AND otp=$2`
+	_, err := repo.pool.Exec(
+		context.Background(),
+		query,
+		email,
+		otp,
+	)
+	return err
+}
+
+func (repo *PostgresRepo) ValidateAdminOtp(email string, otp string) (bool, error) {
+	query1 := `SELECT EXISTS ( SELECT 1 FROM admin_otps WHERE email=$1 AND otp=$2 )`
+	query2 := `DELETE FROM admin_otps WHERE email=$1 AND otp=$2`
+
+	var otpExists bool
+
+	err := repo.pool.QueryRow(
+		context.Background(),
+		query1,
+		email,
+		otp,
+	).Scan(&otpExists)
+
+	if err != nil {
+		return false, err
+	}
+
+	if !otpExists {
+		return false, nil
+	}
+
+	_, err = repo.pool.Exec(
+		context.Background(),
+		query2,
+		email,
+		otp,
+	)
+
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
+func (repo *PostgresRepo) GetAdminDetailsForValidOtp(email string) (string, string, error) {
+	query := `SELECT admin_id,name FROM admins WHERE email=$1`
+
+	var adminId string
+	var adminName string
+
+	err := repo.pool.QueryRow(
+		context.Background(),
+		query,
+		email,
+	).Scan(&adminId, &adminName)
+
+	return adminId, adminName, err
 }
 
 func (repo *PostgresRepo) UpdateAdminProfileInfo(updateRequest *models.AdminProfileUpdateRequest) error {
