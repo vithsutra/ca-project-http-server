@@ -364,7 +364,7 @@ func (repo *UserRepo) ApplyUserLeave(ctx echo.Context) (int32, error) {
 	return 200, nil
 }
 
-func (repo *UserRepo) GetAllUsersPendingLeaves(ctx echo.Context) ([]*models.UserPendingLeaveResponse, int32, error) {
+func (repo *UserRepo) GetAllUsersPendingLeaves(ctx echo.Context) (int32, []*models.UserPendingLeaveResponse, int32, error) {
 	adminId := ctx.Param("adminId")
 	page := ctx.QueryParam("page")
 	limit := ctx.QueryParam("limit")
@@ -380,7 +380,7 @@ func (repo *UserRepo) GetAllUsersPendingLeaves(ctx echo.Context) ([]*models.User
 	pageInt, err := strconv.Atoi(page)
 
 	if err != nil {
-		return nil, 400, errors.New("page paramater must be valid number")
+		return 0, nil, 400, errors.New("page paramater must be valid number")
 	}
 
 	if pageInt <= 0 {
@@ -390,7 +390,7 @@ func (repo *UserRepo) GetAllUsersPendingLeaves(ctx echo.Context) ([]*models.User
 	limitInt, err := strconv.Atoi(limit)
 
 	if err != nil {
-		return nil, 400, errors.New("limit parameter must be valid number")
+		return 0, nil, 400, errors.New("limit parameter must be valid number")
 	}
 
 	if limitInt <= 0 {
@@ -399,21 +399,28 @@ func (repo *UserRepo) GetAllUsersPendingLeaves(ctx echo.Context) ([]*models.User
 
 	offset := (pageInt - 1) * limitInt
 
+	pendingLeavesCount, err := repo.dbRepo.GetAllUsersPendingLeavesCount(adminId)
+
+	if err != nil {
+		log.Println("error occurred with database, Error: ", err.Error())
+		return 0, nil, 500, errors.New("internal server error occurred")
+	}
+
 	pendingLeaves, err := repo.dbRepo.GetAllUsersPendingLeaves(adminId, uint32(limitInt), uint32(offset))
 
 	if err != nil {
 		log.Println("error occurred with database, Error: ", err.Error())
-		return nil, 500, errors.New("internal server error occurred")
+		return 0, nil, 500, errors.New("internal server error occurred")
 	}
 
 	if pendingLeaves == nil {
-		return nil, 404, errors.New("users pending leaves was empty")
+		return 0, nil, 404, errors.New("users pending leaves was empty")
 	}
 
-	return pendingLeaves, 200, nil
+	return int32(pendingLeavesCount), pendingLeaves, 200, nil
 }
 
-func (repo *UserRepo) GetUserLeaves(ctx echo.Context) ([]*models.UserLeaveResponse, int32, error) {
+func (repo *UserRepo) GetUserLeaves(ctx echo.Context) (int32, []*models.UserLeaveResponse, int32, error) {
 	userId := ctx.Param("userId")
 	leaveStatus := ctx.QueryParam("status")
 	page := ctx.QueryParam("page")
@@ -430,7 +437,7 @@ func (repo *UserRepo) GetUserLeaves(ctx echo.Context) ([]*models.UserLeaveRespon
 	pageInt, err := strconv.Atoi(page)
 
 	if err != nil {
-		return nil, 400, errors.New("page paramater must be valid number")
+		return 0, nil, 400, errors.New("page paramater must be valid number")
 	}
 
 	if pageInt <= 0 {
@@ -440,7 +447,7 @@ func (repo *UserRepo) GetUserLeaves(ctx echo.Context) ([]*models.UserLeaveRespon
 	limitInt, err := strconv.Atoi(limit)
 
 	if err != nil {
-		return nil, 400, errors.New("limit parameter must be valid number")
+		return 0, nil, 400, errors.New("limit parameter must be valid number")
 	}
 
 	if limitInt <= 0 {
@@ -453,29 +460,36 @@ func (repo *UserRepo) GetUserLeaves(ctx echo.Context) ([]*models.UserLeaveRespon
 
 	if err != nil {
 		log.Println("error occurred with database, Error: ", err.Error())
-		return nil, 500, errors.New("internal server error occurred")
+		return 0, nil, 500, errors.New("internal server error occurred")
 	}
 
 	if !userIdExists {
-		return nil, 400, errors.New("user id not exists")
+		return 0, nil, 400, errors.New("user id not exists")
 	}
 
 	if leaveStatus != "" && leaveStatus != "pending" && leaveStatus != "granted" && leaveStatus != "canceled" {
-		return nil, 400, errors.New("invalid leave status")
+		return 0, nil, 400, errors.New("invalid leave status")
+	}
+
+	usersLeaveCount, err := repo.dbRepo.GetUsersLeavesCount(userId, leaveStatus)
+
+	if err != nil {
+		log.Println("error occurred with database, Error: ", err.Error())
+		return 0, nil, 500, errors.New("internal server error occurred")
 	}
 
 	userLeaveResponses, err := repo.dbRepo.GetUserLeaves(userId, leaveStatus, uint32(limitInt), uint32(offset))
 
 	if err != nil {
 		log.Println("error occurred with database, Error: ", err.Error())
-		return nil, 500, errors.New("internal server error occurred")
+		return 0, nil, 500, errors.New("internal server error occurred")
 	}
 
 	if userLeaveResponses == nil {
-		return nil, 404, errors.New("user leaves was empty")
+		return 0, nil, 404, errors.New("user leaves was empty")
 	}
 
-	return userLeaveResponses, 200, nil
+	return int32(usersLeaveCount), userLeaveResponses, 200, nil
 
 }
 
@@ -907,7 +921,7 @@ func (user *UserRepo) ValidateUserOtp(ctx echo.Context) (string, int32, error) {
 	return token, 200, nil
 }
 
-func (user *UserRepo) GetUserWorkHistory(ctx echo.Context) ([]*models.UserWorkHistoryResponse, int32, error) {
+func (user *UserRepo) GetUserWorkHistory(ctx echo.Context) (int32, []*models.UserWorkHistoryResponse, int32, error) {
 	userId := ctx.Param("userId")
 	page := ctx.QueryParam("page")
 	limit := ctx.QueryParam("limit")
@@ -923,7 +937,7 @@ func (user *UserRepo) GetUserWorkHistory(ctx echo.Context) ([]*models.UserWorkHi
 	pageInt, err := strconv.Atoi(page)
 
 	if err != nil {
-		return nil, 400, errors.New("page paramater must be valid number")
+		return 0, nil, 400, errors.New("page paramater must be valid number")
 	}
 
 	if pageInt <= 0 {
@@ -933,7 +947,7 @@ func (user *UserRepo) GetUserWorkHistory(ctx echo.Context) ([]*models.UserWorkHi
 	limitInt, err := strconv.Atoi(limit)
 
 	if err != nil {
-		return nil, 400, errors.New("limit parameter must be valid number")
+		return 0, nil, 400, errors.New("limit parameter must be valid number")
 	}
 
 	if limitInt <= 0 {
@@ -942,17 +956,24 @@ func (user *UserRepo) GetUserWorkHistory(ctx echo.Context) ([]*models.UserWorkHi
 
 	offset := (pageInt - 1) * limitInt
 
+	workHistoryCount, err := user.dbRepo.GetUsersWorkHistoryCount(userId)
+
+	if err != nil {
+		log.Println("error occurred with database, Error: ", err.Error())
+		return 0, nil, 500, errors.New("internal server error")
+	}
+
 	workHistory, err := user.dbRepo.GetUserWorkHistory(userId, uint32(limitInt), uint32(offset))
 
 	if err != nil {
 		log.Println("error occurred with database, Error: ", err.Error())
-		return nil, 500, errors.New("internal server error")
+		return 0, nil, 500, errors.New("internal server error")
 	}
 
 	if workHistory == nil {
-		return nil, 404, errors.New("empty user work history")
+		return 0, nil, 404, errors.New("empty user work history")
 	}
 
-	return workHistory, 200, nil
+	return int32(workHistoryCount), workHistory, 200, nil
 
 }

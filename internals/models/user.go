@@ -206,7 +206,9 @@ type UserDatabaseInterface interface {
 	UserWorkLogout(userWorkLogoutRequest *UserWorkLogoutRequest) error
 	CheckUserPendingLeaveExists(userId string) (bool, error)
 	ApplyUserLeave(userLeave *UserLeave) error
+	GetAllUsersPendingLeavesCount(adminId string) (int, error)
 	GetAllUsersPendingLeaves(adminId string, limit uint32, offset uint32) ([]*UserPendingLeaveResponse, error)
+	GetUsersLeavesCount(userId string, leaveStatus string) (int, error)
 	GetUserLeaves(userId string, leaveStatus string, limit uint32, offset uint32) ([]*UserLeaveResponse, error)
 	CheckLeaveIdExists(leaveId string) (bool, error)
 	CheckPendingLeaveExistsByLeaveId(leaveId string) (bool, error)
@@ -221,6 +223,7 @@ type UserDatabaseInterface interface {
 	ClearOtp(email string, otp string) error
 	CheckOtpExists(email string, otp string) (bool, error)
 	GetUserDetailsForValidateOtp(email string) (string, string, error)
+	GetUsersWorkHistoryCount(userId string) (int, error)
 	GetUserWorkHistory(userId string, limit uint32, offset uint32) ([]*UserWorkHistoryResponse, error)
 }
 

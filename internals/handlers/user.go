@@ -185,7 +185,7 @@ func (h *userHandler) ApplyUserLeaveHandler(ctx echo.Context) error {
 }
 
 func (h *userHandler) GetUserPendingLeavesHandler(ctx echo.Context) error {
-	pendingLeaves, statusCode, err := h.repo.GetAllUsersPendingLeaves(ctx)
+	pendingLeavesCount, pendingLeaves, statusCode, err := h.repo.GetAllUsersPendingLeaves(ctx)
 
 	if err != nil {
 		response := &models.ErrorResponse{
@@ -199,7 +199,10 @@ func (h *userHandler) GetUserPendingLeavesHandler(ctx echo.Context) error {
 	response := &models.SuccessResponse{
 		Status:  "success",
 		Message: "users pending leaves fetched successfully",
-		Data:    pendingLeaves,
+		Data: map[string]interface{}{
+			"total_count": pendingLeavesCount,
+			"leaves":      pendingLeaves,
+		},
 	}
 
 	ctx.JSON(int(statusCode), response)
@@ -208,7 +211,7 @@ func (h *userHandler) GetUserPendingLeavesHandler(ctx echo.Context) error {
 }
 
 func (h *userHandler) GetUserLeavesHandler(ctx echo.Context) error {
-	userLeaves, statusCode, err := h.repo.GetUserLeaves(ctx)
+	usersLeavesCount, userLeaves, statusCode, err := h.repo.GetUserLeaves(ctx)
 
 	if err != nil {
 		response := &models.ErrorResponse{
@@ -221,7 +224,10 @@ func (h *userHandler) GetUserLeavesHandler(ctx echo.Context) error {
 	response := &models.SuccessResponse{
 		Status:  "success",
 		Message: "user leaves fetched successfully",
-		Data:    userLeaves,
+		Data: map[string]interface{}{
+			"total_count": usersLeavesCount,
+			"laves":       userLeaves,
+		},
 	}
 
 	ctx.JSON(int(statusCode), response)
@@ -429,7 +435,7 @@ func (h *userHandler) ValidateUserOtpHandler(ctx echo.Context) error {
 }
 
 func (h *userHandler) GetUserWorkHistoryHandler(ctx echo.Context) error {
-	history, statusCode, err := h.repo.GetUserWorkHistory(ctx)
+	historyCount, history, statusCode, err := h.repo.GetUserWorkHistory(ctx)
 
 	if err != nil {
 		response := &models.ErrorResponse{
@@ -443,7 +449,10 @@ func (h *userHandler) GetUserWorkHistoryHandler(ctx echo.Context) error {
 	response := &models.SuccessResponse{
 		Status:  "success",
 		Message: "successfully fetched user workhistory",
-		Data:    history,
+		Data: map[string]interface{}{
+			"total_count": historyCount,
+			"history":     history,
+		},
 	}
 
 	ctx.JSON(int(statusCode), response)

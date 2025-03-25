@@ -337,6 +337,24 @@ func (repo *PostgresRepo) ApplyUserLeave(userLeave *models.UserLeave) error {
 	return err
 }
 
+func (repo *PostgresRepo) GetAllUsersPendingLeavesCount(adminId string) (int, error) {
+	query := `SELECT 
+				COUNT(*) 
+			  FROM users u 
+			  JOIN users_leave_history uh ON u.user_id=uh.user_id
+			  WHERE u.admin_id=$1 AND uh.status='pending'`
+
+	var count int
+
+	err := repo.pool.QueryRow(
+		context.Background(),
+		query,
+		adminId,
+	).Scan(&count)
+
+	return count, err
+}
+
 func (repo *PostgresRepo) GetAllUsersPendingLeaves(adminId string, limit uint32, offset uint32) ([]*models.UserPendingLeaveResponse, error) {
 
 	query := `SELECT 
@@ -392,6 +410,26 @@ func (repo *PostgresRepo) GetAllUsersPendingLeaves(adminId string, limit uint32,
 
 	return pendingLeaves, nil
 
+}
+
+func (repo *PostgresRepo) GetUsersLeavesCount(userId string, leaveStatus string) (int, error) {
+	query := ""
+
+	if leaveStatus == "pending" {
+		query = `SELECT COUNT(*) FROM users_leave_history WHERE user_id=$1 AND status='pending'`
+	} else if leaveStatus == "granted" {
+		query = `SELECR COUNT(*) FROM users_leave_history WHERE user_id=$1 AND status='granted'`
+	} else if leaveStatus == "canceled" {
+		query = `SELECT COUNT(*) FROM users_leave_history WHERE user_id=$1 AND status='canceled'`
+	} else {
+		query = `SELECT COUNT(*) FROM users_leave_history WHERE user_id=$1`
+	}
+
+	var count int
+
+	err := repo.pool.QueryRow(context.Background(), query, userId).Scan(&count)
+
+	return count, err
 }
 
 func (repo *PostgresRepo) GetUserLeaves(userId string, leaveStatus string, limit uint32, offset uint32) ([]*models.UserLeaveResponse, error) {
@@ -571,6 +609,15 @@ func (repo *PostgresRepo) GetUserDetailsForValidateOtp(email string) (string, st
 	var userName string
 	err := repo.pool.QueryRow(context.Background(), query, email).Scan(&userId, &userName)
 	return userId, userName, err
+}
+
+func (repo *PostgresRepo) GetUsersWorkHistoryCount(userId string) (int, error) {
+	query := `SELECT COUNT(*) FROM users_history WHERE user_id=$1`
+
+	var count int
+	err := repo.pool.QueryRow(context.Background(), query, userId).Scan(&count)
+
+	return count, err
 }
 
 func (repo *PostgresRepo) GetUserWorkHistory(userId string, limit uint32, offset uint32) ([]*models.UserWorkHistoryResponse, error) {
