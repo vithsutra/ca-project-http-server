@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"errors"
+	"log"
 	"os"
 
 	"github.com/labstack/echo/v4"
@@ -12,6 +13,7 @@ func RootMiddleware() echo.MiddlewareFunc {
 	return middleware.BasicAuth(
 		func(username, password string, ctx echo.Context) (bool, error) {
 			rootUserName := os.Getenv("ROOT_USERNAME")
+			log.Println("reqquest came ", os.Getenv("ROOT_USERNAME"), os.Getenv("ROOT_PASSWORD"))
 			if rootUserName == "" {
 				return false, errors.New("internal server error")
 			}
