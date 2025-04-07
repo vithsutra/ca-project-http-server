@@ -24,7 +24,7 @@ jobs:
           docker push $IMAGE_NAME
 
   deploy:
-    name: Deploy Docker Image to GCE
+    name: Deploy Docker Image to Cloud VM
     runs-on: ubuntu-latest
     needs: build
 
@@ -46,31 +46,32 @@ jobs:
           echo "QUEUE_NAME=${{ secrets.QUEUE_NAME }}" >> .env
           echo "AWS_S3_BUCKET_NAME=${{ secrets.AWS_S3_BUCKET_NAME }}" >> .env
 
-      - name: Setup Deploy Environment in GCE Instance
+      - name: Setup Deploy Environment in Cloud Instance
         uses: appleboy/ssh-action@v0.1.10
         with:
-          host: "${{ secrets.GCP_INSTANCE_HOST }}"
-          username: "${{ secrets.GCP_INSTANCE_USERNAME }}"
-          key: "${{ secrets.GCE_SSH_PRIVATE_KEY }}"
+          host: "${{ secrets.CLOUD_INSTANCE_HOST }}"
+          username: "${{ secrets.CLOUD_INSTANCE_USERNAME }}"
+          key: "${{ secrets.CLOUD_INSTANCE_SSH_PRIVATE_KEY }}"
           script: |
             echo "Connected to VM"
             mkdir -p ~/ca-project/ca-project-http-server-deployment
 
-      - name: Upload .env to GCE Instance
+      - name: Upload .env to Cloud Instance
         run: |
-          echo "${{ secrets.GCE_SSH_PRIVATE_KEY }}" > ca_ssh_key
+          echo "${{ secrets.CLOUD_INSTANCE_SSH_PRIVATE_KEY }}" > ca_ssh_key
           chmod 600 ca_ssh_key
-          scp -o StrictHostKeyChecking=no -i ca_ssh_key .env ${{ secrets.GCP_INSTANCE_USERNAME }}@${{ secrets.GCP_INSTANCE_HOST }}:~/ca-project/ca-project-http-server-deployment/.env
+          scp -o StrictHostKeyChecking=no -i ca_ssh_key .env ${{ secrets.CLOUD_INSTANCE_USERNAME }}@${{ secrets.CLOUD_INSTANCE_HOST }}:~/ca-project/ca-project-http-server-deployment/.env
 
-      - name: Deploying Docker Image on GCE Instance
+      - name: Deploying Docker Image on Cloud Instance
         uses: appleboy/ssh-action@v0.1.10
         with:
-          host: "${{ secrets.GCP_INSTANCE_HOST }}"
-          username: "${{ secrets.GCP_INSTANCE_USERNAME }}"
-          key: "${{ secrets.GCE_SSH_PRIVATE_KEY }}"
+          host: "${{ secrets.CLOUD_INSTANCE_HOST }}"
+          username: "${{ secrets.CLOUD_INSTANCE_USERNAME }}"
+          key: "${{ secrets.CLOUD_INSTANCE_SSH_PRIVATE_KEY }}"
           script: |
             IMAGE_NAME=docker.io/vithsutratechnologies/ca-project-http-server:latest
             docker pull $IMAGE_NAME
+            docker images | grep "<none>" | awk '{print $3}' | xargs -r docker rmi -f
             docker ps | grep ca-project-http-server | awk '{print $1}' | xargs -I {} docker kill {}
             docker ps -a | grep ca-project-http-server | awk '{print $1}' | xargs -I {} docker rm {}
             docker run -d -p 8080:8080 --name ca-project-http-server --env-file ~/ca-project/ca-project-http-server-deployment/.env $IMAGE_NAME
