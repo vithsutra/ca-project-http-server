@@ -60,6 +60,7 @@ func InitHttpRoutes(e *echo.Echo,
 	admin.GET("/get/user_leaves/:userId", userHandler.GetUserLeavesHandler)
 	admin.PATCH("/cancel/user_leave/:userId/:leaveId", userHandler.CancelUserLeaveHandler)
 	admin.PATCH("/grant/user_leave/:leaveId", userHandler.GrantUserLeaveHandler)
+	admin.GET("/download/user/report", userHandler.DownloadUserReportPdf)
 
 	//user routes
 	user := e.Group("/user")

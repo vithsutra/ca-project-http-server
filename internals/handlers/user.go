@@ -1,8 +1,13 @@
 package handlers
 
 import (
+	"fmt"
+	"log"
+	"os"
+
 	"github.com/labstack/echo/v4"
 	"github.com/vithsutra/ca_project_http_server/internals/models"
+	"github.com/vithsutra/ca_project_http_server/pkg/utils"
 	"github.com/vithsutra/ca_project_http_server/repository"
 )
 
@@ -456,5 +461,39 @@ func (h *userHandler) GetUserWorkHistoryHandler(ctx echo.Context) error {
 	}
 
 	ctx.JSON(int(statusCode), response)
+	return nil
+}
+
+func (h *userHandler) DownloadUserReportPdf(ctx echo.Context) error {
+	userReportData, statusCode, err := h.repo.DownloadUserWorkHistory(ctx)
+
+	if err != nil {
+		response := &models.ErrorResponse{
+			Status: "error",
+			Error:  err.Error(),
+		}
+		ctx.JSON(int(statusCode), response)
+		return err
+	}
+
+	pdfId, err := utils.GenerateUserReportPdf(userReportData)
+
+	if err != nil {
+		log.Println("error occurred while generating the pdf, Error: ", err)
+		response := &models.ErrorResponse{
+			Status: "error",
+			Error:  "error occurred while generating the pdf",
+		}
+		ctx.JSON(int(statusCode), response)
+		return err
+	}
+
+	ctx.File(fmt.Sprintf("./users_cache/%s.pdf", pdfId))
+
+	if err := os.Remove(fmt.Sprintf("./users_cache/%s.pdf", pdfId)); err != nil {
+		log.Println("error occurred while removing the pdf file: Error", err.Error())
+		return err
+	}
+
 	return nil
 }

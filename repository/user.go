@@ -977,3 +977,49 @@ func (user *UserRepo) GetUserWorkHistory(ctx echo.Context) (int32, []*models.Use
 	return int32(workHistoryCount), workHistory, 200, nil
 
 }
+
+func (user *UserRepo) DownloadUserWorkHistory(ctx echo.Context) (*models.UserReportPdf, int32, error) {
+	userRequest := new(models.UserReportPdfDownloadRequest)
+
+	if err := ctx.Bind(userRequest); err != nil {
+		return nil, 400, errors.New("missing or invalid query parameters")
+	}
+
+	validate := validator.New()
+
+	if err := validate.RegisterValidation("date", utils.ValidateDate); err != nil {
+		log.Println("error occurred while registering the date validation, Error: ", err.Error())
+		return nil, 500, errors.New("internal server error occurred")
+	}
+
+	if err := validate.Struct(userRequest); err != nil {
+		return nil, 400, errors.New("invalid query parameters")
+	}
+
+	if err := utils.CompareDates(userRequest.StartDate, userRequest.EndDate); err != nil {
+		return nil, 400, errors.New("end date should be greater than start date")
+	}
+
+	userName, userCategory, err := user.dbRepo.GetUserInfoForPdf(userRequest.UserId)
+
+	if err != nil {
+		log.Println("error occurred with database, Error: ", err.Error())
+		return nil, 500, errors.New("internal server error")
+	}
+
+	history, err := user.dbRepo.GetWorkHistoryForPdf(userRequest.UserId, userRequest.StartDate, userRequest.EndDate)
+
+	if err != nil {
+		log.Println("error occurred with database, Error: ", err.Error())
+		return nil, 500, errors.New("internal server error")
+	}
+
+	userReportPdf := models.UserReportPdf{
+		Name:     userName,
+		Position: userCategory,
+		History:  history,
+	}
+
+	return &userReportPdf, 200, nil
+
+}

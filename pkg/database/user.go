@@ -660,3 +660,65 @@ func (repo *PostgresRepo) GetUserWorkHistory(userId string, limit uint32, offset
 	return usersWorkHistory, nil
 
 }
+
+func (repo *PostgresRepo) GetUserInfoForPdf(userId string) (string, string, error) {
+	query := `SELECT users.name
+					 employee_category.category_name
+			  FROM 
+			  		users
+			  JOIN 
+			  		employee_category ON users.category_id=employee_category.category_id
+			  WHERE users.user_id = $1`
+
+	var userName, userCategory string
+
+	err := repo.pool.QueryRow(
+		context.Background(),
+		query,
+		userId,
+	).Scan(
+		&userName,
+		&userCategory,
+	)
+	return userName, userCategory, err
+}
+
+func (repo *PostgresRepo) GetWorkHistoryForPdf(userId, startDate, endDate string) ([]*models.UserWorkHistoryForPdf, error) {
+	query := `SELECT 
+				work_date,
+				login_time,
+				logout_time,
+				uploaded_work
+			 FROM 
+			 	users_history
+			 WHERE user_id=$1 AND work_date BETWEEEN $2 AND $3;
+			`
+	rows, err := repo.pool.Query(
+		context.Background(),
+		query,
+		userId,
+		startDate,
+		endDate,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var usersWorkHistory []*models.UserWorkHistoryForPdf
+	for rows.Next() {
+		var userWorkHistory models.UserWorkHistoryForPdf
+		if err := rows.Scan(
+			&userWorkHistory.Date,
+			&userWorkHistory.LoginTime,
+			&userWorkHistory.LogoutTime,
+			&userWorkHistory.WorkSummary,
+		); err != nil {
+			return nil, err
+		}
+
+		usersWorkHistory = append(usersWorkHistory, &userWorkHistory)
+	}
+
+	return usersWorkHistory, nil
+}

@@ -95,6 +95,25 @@ type UserWorkHistoryResponse struct {
 	TimeStamp    time.Time `json:"timestamp"`
 }
 
+type UserReportPdfDownloadRequest struct {
+	UserId    string `query:"user_id" validate:"required"`
+	StartDate string `query:"start_date" validate:"required,date"`
+	EndDate   string `query:"end_date" validate:"required,date"`
+}
+
+type UserWorkHistoryForPdf struct {
+	Date        string
+	WorkSummary string
+	LoginTime   string
+	LogoutTime  string
+}
+
+type UserReportPdf struct {
+	Name     string
+	Position string
+	History  []*UserWorkHistoryForPdf
+}
+
 type UserWorkLogoutRequest struct {
 	UserId     string `json:"user_id" validate:"required"`
 	LogoutDate string `json:"date" validate:"required,date"`
@@ -225,6 +244,8 @@ type UserDatabaseInterface interface {
 	GetUserDetailsForValidateOtp(email string) (string, string, error)
 	GetUsersWorkHistoryCount(userId string) (int, error)
 	GetUserWorkHistory(userId string, limit uint32, offset uint32) ([]*UserWorkHistoryResponse, error)
+	GetUserInfoForPdf(userId string) (string, string, error)
+	GetWorkHistoryForPdf(userId, startDate, endDate string) ([]*UserWorkHistoryForPdf, error)
 }
 
 type UserStorageInterface interface {

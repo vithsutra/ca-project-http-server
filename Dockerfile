@@ -14,6 +14,16 @@ FROM alpine:latest
 
 WORKDIR /app
 
+RUN mkdir users_cache
+
+RUN mkdir assets
+
+RUN mkdir fonts
+
+COPY --from=build /app/assets ./assets
+
+COPY --from=build /app/fonts ./fonts
+
 COPY --from=build /app/bin/main .
 
 ENTRYPOINT [ "./main" ]
