@@ -662,12 +662,13 @@ func (repo *PostgresRepo) GetUserWorkHistory(userId string, limit uint32, offset
 }
 
 func (repo *PostgresRepo) GetUserInfoForPdf(userId string) (string, string, error) {
-	query := `SELECT users.name
-					 employee_category.category_name
+	query := `SELECT 
+	            users.name,
+				employee_category.category_name
 			  FROM 
-			  		users
+			  	users
 			  JOIN 
-			  		employee_category ON users.category_id=employee_category.category_id
+			  	employee_category ON users.category_id=employee_category.category_id
 			  WHERE users.user_id = $1`
 
 	var userName, userCategory string
@@ -680,6 +681,7 @@ func (repo *PostgresRepo) GetUserInfoForPdf(userId string) (string, string, erro
 		&userName,
 		&userCategory,
 	)
+
 	return userName, userCategory, err
 }
 
@@ -691,7 +693,7 @@ func (repo *PostgresRepo) GetWorkHistoryForPdf(userId, startDate, endDate string
 				uploaded_work
 			 FROM 
 			 	users_history
-			 WHERE user_id=$1 AND work_date BETWEEEN $2 AND $3;
+			 WHERE user_id=$1 AND work_date BETWEEN $2 AND $3;
 			`
 	rows, err := repo.pool.Query(
 		context.Background(),
