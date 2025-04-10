@@ -14,7 +14,7 @@ FROM alpine:latest
 
 WORKDIR /app
 
-RUN mkdir users_cache
+RUN  mkdir users_cache
 
 RUN mkdir assets
 

@@ -14,8 +14,6 @@ import (
 
 const LOGO_IMAGE_PATH = "./assets/vithsutra_logo.png"
 
-var userPerDayWorkHours []string
-
 func OuterBorderSection(pdf *gopdf.GoPdf) {
 	pdf.SetStrokeColor(0, 0, 0)
 	pdf.SetLineWidth(0.05)
@@ -147,6 +145,7 @@ func EmployeeInfoSection(pdf *gopdf.GoPdf, employeeName, employeeCategory, date 
 }
 
 func TableHeaderSection(pdf *gopdf.GoPdf, startY float64) error {
+
 	pdf.SetStrokeColor(0, 0, 0)
 	pdf.SetLineWidth(0.05)
 	pdf.Line(1, startY, 20, startY)
@@ -238,17 +237,19 @@ func TextWrapper(pdf *gopdf.GoPdf, text string, maxWidth float64) []string {
 	return lines
 }
 
-func TableSection(pdf *gopdf.GoPdf, startY float64, history []*models.UserWorkHistoryForPdf) (float64, error) {
+func TableSection(pdf *gopdf.GoPdf, startY float64, history []*models.UserWorkHistoryForPdf) (float64, string, error) {
 
 	var isFirstPage bool = true
 
 	var y float64 = startY + 2.25
 
+	var userPerDayWorkHours []string
+
 	for index1, history := range history {
 		if isFirstPage {
 			TableHeaderSection(pdf, startY)
 			if err := pdf.SetFont("light-font", "", 14); err != nil {
-				return 0.0, err
+				return 0.0, "", err
 			}
 			isFirstPage = false
 		}
@@ -257,7 +258,7 @@ func TableSection(pdf *gopdf.GoPdf, startY float64, history []*models.UserWorkHi
 			pdf.AddPage()
 			TableHeaderSection(pdf, 5)
 			if err := pdf.SetFont("light-font", "", 14); err != nil {
-				return 0.0, err
+				return 0.0, "", err
 			}
 			y = 7.25
 		}
@@ -265,7 +266,7 @@ func TableSection(pdf *gopdf.GoPdf, startY float64, history []*models.UserWorkHi
 		textWidth, err := pdf.MeasureTextWidth(strconv.Itoa(index1 + 1))
 
 		if err != nil {
-			return 0.0, err
+			return 0.0, "", err
 		}
 
 		x := (2 - (textWidth / 2))
@@ -276,7 +277,7 @@ func TableSection(pdf *gopdf.GoPdf, startY float64, history []*models.UserWorkHi
 		textWidth, err = pdf.MeasureTextWidth(history.Date)
 
 		if err != nil {
-			return 0.0, err
+			return 0.0, "", err
 		}
 
 		x = (5.25 - (textWidth / 2))
@@ -287,7 +288,7 @@ func TableSection(pdf *gopdf.GoPdf, startY float64, history []*models.UserWorkHi
 		diffTime, err := CalculateTimeDiff(history.LoginTime, history.LogoutTime)
 
 		if err != nil {
-			return 0.0, err
+			return 0.0, "", err
 		}
 
 		userPerDayWorkHours = append(userPerDayWorkHours, diffTime)
@@ -295,7 +296,7 @@ func TableSection(pdf *gopdf.GoPdf, startY float64, history []*models.UserWorkHi
 		textWidth, err = pdf.MeasureTextWidth(diffTime)
 
 		if err != nil {
-			return 0.0, err
+			return 0.0, "", err
 		}
 
 		x = (18.5 - (textWidth / 2))
@@ -312,7 +313,7 @@ func TableSection(pdf *gopdf.GoPdf, startY float64, history []*models.UserWorkHi
 			textWidth, err = pdf.MeasureTextWidth(line)
 
 			if err != nil {
-				return 0.0, err
+				return 0.0, "", err
 			}
 
 			localX, localY := (12.25 - (textWidth / 2)), y+(lineCounter/1.8)
@@ -322,7 +323,7 @@ func TableSection(pdf *gopdf.GoPdf, startY float64, history []*models.UserWorkHi
 				pdf.AddPage()
 				TableHeaderSection(pdf, 5)
 				if err := pdf.SetFont("light-font", "", 14); err != nil {
-					return 0.0, err
+					return 0.0, "", err
 				}
 				y = 7.25
 				localY = y
@@ -343,7 +344,13 @@ func TableSection(pdf *gopdf.GoPdf, startY float64, history []*models.UserWorkHi
 
 	}
 
-	return y, nil
+	totalWorkHours, err := SumTimes(userPerDayWorkHours)
+
+	if err != nil {
+		return 0.0, "", err
+	}
+
+	return y, totalWorkHours, nil
 }
 
 func TotalWorkHoursSection(pdf *gopdf.GoPdf, startY float64, totalHrs string) error {
@@ -422,24 +429,14 @@ func GenerateUserReportPdf(data *models.UserReportPdf) (string, error) {
 		return "", err
 	}
 
-	lastY, err := TableSection(&pdf, 7.2, data.History)
+	lastY, totalWorkHours, err := TableSection(&pdf, 7.2, data.History)
 
 	if err != nil {
 		return "", err
 	}
 
-	totoalWorkHour, err := SumTimes(userPerDayWorkHours)
-
-	if err != nil {
+	if err := TotalWorkHoursSection(&pdf, lastY, totalWorkHours); err != nil {
 		return "", err
-	}
-
-	if err := TotalWorkHoursSection(&pdf, lastY, totoalWorkHour); err != nil {
-		return "", err
-	}
-
-	if err := pdf.WritePdf("./report.pdf"); err != nil {
-		log.Fatalln(err)
 	}
 
 	uid := uuid.New().String()
