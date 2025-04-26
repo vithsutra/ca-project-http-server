@@ -180,13 +180,11 @@ func (repo *UserRepo) UserLogin(ctx echo.Context) (*models.UserLoginResponse, in
 	}
 
 	validation := validator.New()
-
 	if err := validation.Struct(userLoginRequest); err != nil {
 		return nil, 400, errors.New("request body validation error")
 	}
 
 	userId, userName, hashedPassword, err := repo.dbRepo.GetUserForLogin(userLoginRequest.Email)
-
 	if err != nil {
 		log.Println("error occurred with database, Error: ", err.Error())
 		return nil, 500, errors.New("internal server error occurred")
@@ -196,15 +194,21 @@ func (repo *UserRepo) UserLogin(ctx echo.Context) (*models.UserLoginResponse, in
 		return nil, 401, errors.New("incorrect password")
 	}
 
-	token, err := utils.GenerateToken(userId, userLoginRequest.Email, userName)
+	adminId, err := repo.dbRepo.GetAdminIdByUserId(userId)
+	if err != nil {
+		log.Println("error fetching admin_id: ", err.Error())
+		return nil, 500, errors.New("failed to fetch admin ID")
+	}
 
+	token, err := utils.GenerateToken(userId, userLoginRequest.Email, userName)
 	if err != nil {
 		log.Println("error occurred while generating token, Error: ", err.Error())
 		return nil, 500, errors.New("internal server error occurred")
 	}
 
 	response := &models.UserLoginResponse{
-		Token: token,
+		AdminId: adminId,
+		Token:   token,
 	}
 	return response, 200, nil
 }

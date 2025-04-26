@@ -157,6 +157,13 @@ func (repo *PostgresRepo) GetUserForLogin(email string) (string, string, string,
 	return userId, name, password, err
 }
 
+func (repo *PostgresRepo) GetAdminIdByUserId(userId string) (string, error) {
+	query := `SELECT admin_id FROM admins WHERE user_id = $1`
+	var adminId string
+	err := repo.pool.QueryRow(context.Background(), query, userId).Scan(&adminId)
+	return adminId, err
+}
+
 func (repo *PostgresRepo) CheckUserWorkEntryExists(userId string, date string) (bool, error) {
 	query := `SELECT EXISTS ( SELECT 1 FROM users_history WHERE user_id = $1 AND work_date = $2 )`
 	var entryExists bool
