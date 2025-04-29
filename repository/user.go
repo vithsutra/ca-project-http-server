@@ -200,15 +200,14 @@ func (repo *UserRepo) UserLogin(ctx echo.Context) (*models.UserLoginResponse, in
 		return nil, 500, errors.New("failed to fetch admin ID")
 	}
 
-	token, err := utils.GenerateToken(userId, userLoginRequest.Email, userName)
+	token, err := utils.GenerateToken(userId, userLoginRequest.Email, userName, adminId)
 	if err != nil {
 		log.Println("error occurred while generating token, Error: ", err.Error())
 		return nil, 500, errors.New("internal server error occurred")
 	}
 
 	response := &models.UserLoginResponse{
-		AdminId: adminId,
-		Token:   token,
+		Token: token,
 	}
 	return response, 200, nil
 }
@@ -915,7 +914,7 @@ func (user *UserRepo) ValidateUserOtp(ctx echo.Context) (string, int32, error) {
 		return "", 500, errors.New("internal server error")
 	}
 
-	token, err := utils.GenerateToken(userId, otpValidateRequest.Email, userName)
+	token, err := utils.GenerateToken(userId, otpValidateRequest.Email, userName, "")
 
 	if err != nil {
 		log.Println("error occurred while generating jwt token, Error: ", err.Error())
