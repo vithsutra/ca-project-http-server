@@ -34,45 +34,46 @@ func NewUserRepo(
 		emailServiceRepo,
 	}
 }
-
-func (repo *UserRepo) CreateUser(ctx echo.Context) (int32, error) {
+func (repo *UserRepo) CreateUser(ctx echo.Context) (string, int32, error) {
 	createUserRequest := new(models.CreateUserRequest)
 
 	if err := ctx.Bind(createUserRequest); err != nil {
-		return 400, errors.New("invalid json request body")
+		return "", 400, errors.New("invalid json request body")
 	}
 
 	validation := validator.New()
 
 	if err := validation.RegisterValidation("password", utils.PasswordValidater); err != nil {
 		log.Println("Error occurred while registering validation, Error: ", err.Error())
-		return 500, errors.New("internal server error")
+		return "", 500, errors.New("internal server error")
 	}
 
 	if err := validation.Struct(createUserRequest); err != nil {
-		return 400, errors.New("request body validation error")
+		return "", 400, errors.New("request body validation error")
 	}
 
 	userEmailExists, err := repo.dbRepo.CheckUserEmailExists(createUserRequest.Email)
 
 	if err != nil {
 		log.Println("error occurred with database, Error: ", err.Error())
-		return 500, errors.New("internal server error occurred")
+		return "", 500, errors.New("internal server error occurred")
 	}
 
 	if userEmailExists {
-		return 400, errors.New("user email already exists")
+		return "", 400, errors.New("user email already exists")
 	}
 
 	hashedPassword, err := utils.HashPassword(createUserRequest.Password)
 
 	if err != nil {
 		log.Println("error occurred while hashing the user password, Error: ", err.Error())
-		return 500, errors.New("internal server error occurred")
+		return "", 500, errors.New("internal server error occurred")
 	}
 
+	userId := uuid.NewString()
+
 	user := &models.User{
-		UserId:      uuid.NewString(),
+		UserId:      userId,
 		AdminId:     createUserRequest.AdminId,
 		CategoryId:  createUserRequest.CategoryId,
 		Name:        createUserRequest.Name,
@@ -86,32 +87,31 @@ func (repo *UserRepo) CreateUser(ctx echo.Context) (int32, error) {
 
 	if err := repo.dbRepo.CreateUser(user); err != nil {
 		log.Println("error occurred with database, Error: ", err.Error())
-		return 500, errors.New("internal server error")
+		return "", 500, errors.New("internal server error")
 	}
 
-	userWelcomeEmailFormat := new(models.UserWelcomeEmailFormat)
-
-	userWelcomeEmailFormat.To = createUserRequest.Email
-	userWelcomeEmailFormat.EmailType = "welcome"
-	userWelcomeEmailFormat.Subject = "Welcome to Vithsutra Technologies"
-	userWelcomeEmailFormat.Data = map[string]string{
-		"user_name":    createUserRequest.Name,
-		"service_name": "CA Application",
+	userWelcomeEmailFormat := &models.UserWelcomeEmailFormat{
+		To:        createUserRequest.Email,
+		EmailType: "welcome",
+		Subject:   "Welcome to Vithsutra Technologies",
+		Data: map[string]string{
+			"user_name":    createUserRequest.Name,
+			"service_name": "CA Application",
+		},
 	}
 
 	jsonBytes, err := json.Marshal(userWelcomeEmailFormat)
-
 	if err != nil {
 		log.Println("error occurred while encoding the json, Error:", err.Error())
-		return 500, errors.New("internal server error occurred")
+		return "", 500, errors.New("internal server error occurred")
 	}
 
 	if err := repo.emailServiceRepo.SendEmail(jsonBytes); err != nil {
 		log.Println("error occurred while sending the welcome email, Error:", err.Error())
-		return 500, errors.New("internal server error occurred")
+		return "", 500, errors.New("internal server error occurred")
 	}
 
-	return 201, nil
+	return userId, 201, nil
 }
 
 func (repo *UserRepo) GetUserProfileDetails(ctx echo.Context) (*models.UserProfileDetailsResponse, int32, error) {
