@@ -22,7 +22,7 @@ func NewUserHandler(repo *repository.UserRepo) *userHandler {
 }
 
 func (h *userHandler) CreateUserHandler(ctx echo.Context) error {
-	statusCode, err := h.repo.CreateUser(ctx)
+	userId, statusCode, err := h.repo.CreateUser(ctx)
 
 	if err != nil {
 		response := &models.ErrorResponse{
@@ -36,12 +36,13 @@ func (h *userHandler) CreateUserHandler(ctx echo.Context) error {
 	response := &models.SuccessResponse{
 		Status:  "success",
 		Message: "user created successfully",
+		Data: map[string]string{
+			"user_id": userId},
 	}
 
 	ctx.JSON(int(statusCode), response)
 	return nil
 }
-
 func (h *userHandler) GetUserProfileDetailsHandler(ctx echo.Context) error {
 	details, statusCode, err := h.repo.GetUserProfileDetails(ctx)
 
