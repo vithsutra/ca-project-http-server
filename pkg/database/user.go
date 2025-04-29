@@ -158,7 +158,7 @@ func (repo *PostgresRepo) GetUserForLogin(email string) (string, string, string,
 }
 
 func (repo *PostgresRepo) GetAdminIdByUserId(userId string) (string, error) {
-	query := `SELECT admin_id FROM admins WHERE user_id = $1`
+	query := `SELECT admin_id FROM users WHERE user_id = $1`
 	var adminId string
 	err := repo.pool.QueryRow(context.Background(), query, userId).Scan(&adminId)
 	return adminId, err
