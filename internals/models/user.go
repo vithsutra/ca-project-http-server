@@ -64,7 +64,8 @@ type UserLoginRequest struct {
 }
 
 type UserLoginResponse struct {
-	Token string `json:"token"`
+	AdminId string `json:"admin_id"`
+	Token   string `json:"token"`
 }
 
 type UserWorkLoginRequest struct {
@@ -216,6 +217,7 @@ type UserDatabaseInterface interface {
 	CreateUser(user *User) error
 	GetUserProfileDetails(userId string) (*UserProfileDetailsResponse, error)
 	GetUsers(adminId string) ([]*UserResponse, error)
+	GetAdminIdByUserId(userId string) (string, error)
 	CheckUserIdExists(userId string) (bool, error)
 	DeleteUser(userId string) error
 	GetUserForLogin(email string) (string, string, string, error)
