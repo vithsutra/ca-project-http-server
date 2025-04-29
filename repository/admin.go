@@ -64,7 +64,7 @@ func (repo *AdminRepo) AdminLogin(ctx echo.Context) (*models.AdminLoginResponse,
 		return nil, 401, errors.New("incorrect password")
 	}
 
-	token, err := utils.GenerateToken(adminId, adminLoginRequest.Email, userName)
+	token, err := utils.GenerateToken(adminId, adminLoginRequest.Email, userName, "admin")
 
 	if err != nil {
 		log.Println("error occurred while generating the token, Error: ", err.Error())
@@ -76,7 +76,6 @@ func (repo *AdminRepo) AdminLogin(ctx echo.Context) (*models.AdminLoginResponse,
 	}, 200, nil
 
 }
-
 func (repo *AdminRepo) AdminForgotPassword(ctx echo.Context) (int32, error) {
 	adminForgotPasswordRequest := new(models.AdminForgotPasswordRequest)
 
@@ -191,7 +190,7 @@ func (repo *AdminRepo) ValidateAdminOtp(ctx echo.Context) (string, int32, error)
 		return "", 500, errors.New("internal server error occurred")
 	}
 
-	token, err := utils.GenerateToken(adminId, adminOtpValidateRequest.Email, adminName)
+	token, err := utils.GenerateToken(adminId, adminOtpValidateRequest.Email, adminName, "admin")
 
 	if err != nil {
 		log.Println("error occurred while generating the token, Error: ", err.Error())
