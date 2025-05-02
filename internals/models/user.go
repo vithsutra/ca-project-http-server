@@ -64,8 +64,7 @@ type UserLoginRequest struct {
 }
 
 type UserLoginResponse struct {
-	AdminId string `json:"admin_id"`
-	Token   string `json:"token"`
+	Token string `json:"token"`
 }
 
 type UserWorkLoginRequest struct {
