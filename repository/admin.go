@@ -28,7 +28,6 @@ func NewAdminRepo(dbRepo models.AdminInterface, storageRepo models.AdminStorageI
 		emailServieRepo: emailServiceRepo,
 	}
 }
-
 func (repo *AdminRepo) AdminLogin(ctx echo.Context) (*models.AdminLoginResponse, int32, error) {
 	adminLoginRequest := new(models.AdminLoginRequest)
 
@@ -37,26 +36,23 @@ func (repo *AdminRepo) AdminLogin(ctx echo.Context) (*models.AdminLoginResponse,
 	}
 
 	validation := validator.New()
-
 	if err := validation.Struct(adminLoginRequest); err != nil {
 		return nil, 400, errors.New("request body validation error")
 	}
 
 	adminEmailsExists, err := repo.dbRepo.CheckAdminEmailsExists(adminLoginRequest.Email)
-
 	if err != nil {
-		log.Println("error occurred with database, Error: ", err.Error())
+		log.Println("error occurred with database, Error:", err.Error())
 		return nil, 500, errors.New("internal server error occurred")
 	}
 
 	if !adminEmailsExists {
-		return nil, 400, errors.New("admin email not exists")
+		return nil, 400, errors.New("admin email does not exist")
 	}
 
 	adminId, userName, hashedPassword, err := repo.dbRepo.GetAdminForLogin(adminLoginRequest.Email)
-
 	if err != nil {
-		log.Println("error occurred with database, Error: ", err.Error())
+		log.Println("error occurred with database, Error:", err.Error())
 		return nil, 500, errors.New("internal server error occurred")
 	}
 
@@ -64,18 +60,19 @@ func (repo *AdminRepo) AdminLogin(ctx echo.Context) (*models.AdminLoginResponse,
 		return nil, 401, errors.New("incorrect password")
 	}
 
-	token, err := utils.GenerateToken(adminId, adminLoginRequest.Email, userName, "admin")
+	const firebasePassword = "firebasePassword"
 
+	token, err := utils.GenerateToken(adminId, adminLoginRequest.Email, userName, "admin", firebasePassword)
 	if err != nil {
-		log.Println("error occurred while generating the token, Error: ", err.Error())
+		log.Println("error occurred while generating the token, Error:", err.Error())
 		return nil, 500, errors.New("internal server error occurred")
 	}
 
 	return &models.AdminLoginResponse{
 		Token: token,
 	}, 200, nil
-
 }
+
 func (repo *AdminRepo) AdminForgotPassword(ctx echo.Context) (int32, error) {
 	adminForgotPasswordRequest := new(models.AdminForgotPasswordRequest)
 
@@ -190,7 +187,7 @@ func (repo *AdminRepo) ValidateAdminOtp(ctx echo.Context) (string, int32, error)
 		return "", 500, errors.New("internal server error occurred")
 	}
 
-	token, err := utils.GenerateToken(adminId, adminOtpValidateRequest.Email, adminName, "admin")
+	token, err := utils.GenerateToken(adminId, adminOtpValidateRequest.Email, adminName, "admin", "")
 
 	if err != nil {
 		log.Println("error occurred while generating the token, Error: ", err.Error())

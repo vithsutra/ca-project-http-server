@@ -8,7 +8,7 @@ import (
 	jwt_token "github.com/golang-jwt/jwt/v5"
 )
 
-func GenerateToken(userId string, email string, userName string, adminId string) (string, error) {
+func GenerateToken(userId string, email string, userName string, adminId string, firebasePassword string) (string, error) {
 
 	secretKey := os.Getenv("JWT_TOKEN_SCRETE_KEY")
 
@@ -19,11 +19,12 @@ func GenerateToken(userId string, email string, userName string, adminId string)
 	token := jwt_token.NewWithClaims(
 		jwt_token.SigningMethodHS256,
 		jwt_token.MapClaims{
-			"admin_id":  adminId,
-			"id":        userId,
-			"user_name": userName,
-			"email":     email,
-			"expiry":    time.Now().Add(time.Minute * 2).Unix(),
+			"admin_id":         adminId,
+			"id":               userId,
+			"user_name":        userName,
+			"email":            email,
+			"firebasepassword": firebasePassword,
+			"expiry":           time.Now().Add(time.Minute * 2).Unix(),
 		},
 	)
 
