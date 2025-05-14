@@ -86,6 +86,7 @@ type UserWorkHistory struct {
 }
 
 type UserWorkHistoryResponse struct {
+	Name         string    `json:"name"`
 	WorkDate     string    `json:"work_date"`
 	LoginTime    string    `json:"login_time"`
 	LogoutTime   string    `json:"logout_time"`
@@ -245,6 +246,7 @@ type UserDatabaseInterface interface {
 	GetUserDetailsForValidateOtp(email string) (string, string, error)
 	GetUsersWorkHistoryCount(userId string) (int, error)
 	GetUserWorkHistory(userId string, limit uint32, offset uint32) ([]*UserWorkHistoryResponse, error)
+	GetAllUsersWorkHistory(adminId string, limit uint32, offset uint32) ([]*UserWorkHistoryResponse, error)
 	GetUserInfoForPdf(userId string) (string, string, error)
 	GetWorkHistoryForPdf(userId, startDate, endDate string) ([]*UserWorkHistoryForPdf, error)
 }

@@ -56,8 +56,11 @@ func InitHttpRoutes(e *echo.Echo,
 	admin.GET("/get/users/:adminId", userHandler.GetUsers)
 	admin.DELETE("/delete/user/:userId", userHandler.DeleteUser)
 	admin.GET("/get/user_work_history/:userId", userHandler.GetUserWorkHistoryHandler)
+	admin.GET("/get/all_users_work_history/:adminId", userHandler.GetAllUsersWorkHistory)
+
 	admin.GET("/get/users_pending_leaves/:adminId", userHandler.GetUserPendingLeavesHandler)
 	admin.GET("/get/user_leaves/:userId", userHandler.GetUserLeavesHandler)
+
 	admin.PATCH("/cancel/user_leave/:userId/:leaveId", userHandler.CancelUserLeaveHandler)
 	admin.PATCH("/grant/user_leave/:leaveId", userHandler.GrantUserLeaveHandler)
 	admin.GET("/download/user/report", userHandler.DownloadUserReportPdf)

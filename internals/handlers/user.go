@@ -3,7 +3,9 @@ package handlers
 import (
 	"fmt"
 	"log"
+	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/labstack/echo/v4"
 	"github.com/vithsutra/ca_project_http_server/internals/models"
@@ -464,7 +466,41 @@ func (h *userHandler) GetUserWorkHistoryHandler(ctx echo.Context) error {
 	ctx.JSON(int(statusCode), response)
 	return nil
 }
+func (h *userHandler) GetAllUsersWorkHistory(ctx echo.Context) error {
+	adminId := ctx.Param("adminId")
+	if adminId == "" {
+		return ctx.JSON(http.StatusBadRequest, echo.Map{"error": "adminId is required"})
+	}
 
+	// Get limit and offset from query parameters
+	limitQuery := ctx.QueryParam("limit")
+	offsetQuery := ctx.QueryParam("offset")
+
+	limit := uint32(10)
+	offset := uint32(0)
+
+	if l, err := strconv.Atoi(limitQuery); err == nil {
+		limit = uint32(l)
+	}
+	if o, err := strconv.Atoi(offsetQuery); err == nil {
+		offset = uint32(o)
+	}
+
+	// Call repo layer
+	workCount, workHistory, totalCount, err := h.repo.GetAllUsersWorkHistoryByAdminId(adminId, limit, offset)
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, echo.Map{
+			"message": "Failed to fetch work history",
+			"error":   err.Error(),
+		})
+	}
+
+	return ctx.JSON(http.StatusOK, echo.Map{
+		"count": workCount,
+		"total": totalCount,
+		"data":  workHistory,
+	})
+}
 func (h *userHandler) DownloadUserReportPdf(ctx echo.Context) error {
 	userReportData, statusCode, err := h.repo.DownloadUserWorkHistory(ctx)
 

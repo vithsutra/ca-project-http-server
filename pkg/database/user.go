@@ -418,6 +418,49 @@ func (repo *PostgresRepo) GetAllUsersPendingLeaves(adminId string, limit uint32,
 	return pendingLeaves, nil
 
 }
+func (repo *PostgresRepo) GetAllUsersWorkHistory(adminId string, limit, offset uint32) ([]*models.UserWorkHistoryResponse, error) {
+	query := `SELECT
+		u.name,
+		uh.work_date,
+		uh.login_time,
+		uh.logout_time,
+		uh.latitude,
+		uh.longitude,
+		uh.uploaded_work,
+		uh.created_at
+	FROM users u
+	JOIN users_history uh ON u.user_id = uh.user_id
+	WHERE u.admin_id = $1
+	ORDER BY uh.work_date DESC
+	LIMIT $2 OFFSET $3`
+
+	rows, err := repo.pool.Query(context.Background(), query, adminId, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var workHistory []*models.UserWorkHistoryResponse
+
+	for rows.Next() {
+		var history models.UserWorkHistoryResponse
+		if err := rows.Scan(
+			&history.Name,
+			&history.WorkDate,
+			&history.LoginTime,
+			&history.LogoutTime,
+			&history.Latitude,
+			&history.Longitude,
+			&history.UploadedWork,
+			&history.TimeStamp,
+		); err != nil {
+			return nil, err
+		}
+		workHistory = append(workHistory, &history)
+	}
+
+	return workHistory, nil
+}
 
 func (repo *PostgresRepo) GetUsersLeavesCount(userId string, leaveStatus string) (int, error) {
 	query := ""
