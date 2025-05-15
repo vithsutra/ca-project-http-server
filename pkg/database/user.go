@@ -669,6 +669,22 @@ func (repo *PostgresRepo) GetUsersWorkHistoryCount(userId string) (int, error) {
 
 	return count, err
 }
+func (repo *PostgresRepo) GetAllUsersWorkHistoryCount(adminId string) (int, error) {
+	query := `
+		SELECT COUNT(*) 
+		FROM users u
+		JOIN users_history uh ON u.user_id = uh.user_id
+		WHERE u.admin_id = $1
+	`
+
+	var count int
+	err := repo.pool.QueryRow(context.Background(), query, adminId).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
 
 func (repo *PostgresRepo) GetUserWorkHistory(userId string, limit uint32, offset uint32) ([]*models.UserWorkHistoryResponse, error) {
 	query := `SELECT 
