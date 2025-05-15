@@ -469,10 +469,12 @@ func (h *userHandler) GetUserWorkHistoryHandler(ctx echo.Context) error {
 func (h *userHandler) GetAllUsersWorkHistory(ctx echo.Context) error {
 	adminId := ctx.Param("adminId")
 	if adminId == "" {
-		return ctx.JSON(http.StatusBadRequest, echo.Map{"error": "adminId is required"})
+		return ctx.JSON(http.StatusBadRequest, &models.ErrorResponse{
+			Status: "error",
+			Error:  "adminId is required",
+		})
 	}
 
-	// Get limit and offset from query parameters
 	limitQuery := ctx.QueryParam("limit")
 	offsetQuery := ctx.QueryParam("offset")
 
@@ -486,21 +488,25 @@ func (h *userHandler) GetAllUsersWorkHistory(ctx echo.Context) error {
 		offset = uint32(o)
 	}
 
-	// Call repo layer
 	workCount, workHistory, totalCount, err := h.repo.GetAllUsersWorkHistoryByAdminId(adminId, limit, offset)
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, echo.Map{
-			"message": "Failed to fetch work history",
-			"error":   err.Error(),
+		return ctx.JSON(http.StatusInternalServerError, &models.ErrorResponse{
+			Status: "error",
+			Error:  err.Error(),
 		})
 	}
 
-	return ctx.JSON(http.StatusOK, echo.Map{
-		"count": workCount,
-		"total": totalCount,
-		"data":  workHistory,
+	return ctx.JSON(http.StatusOK, &models.SuccessResponse{
+		Status:  "success",
+		Message: "successfully fetched all users work history",
+		Data: map[string]interface{}{
+			"count":       workCount,
+			"total_count": totalCount,
+			"history":     workHistory,
+		},
 	})
 }
+
 func (h *userHandler) DownloadUserReportPdf(ctx echo.Context) error {
 	userReportData, statusCode, err := h.repo.DownloadUserWorkHistory(ctx)
 
