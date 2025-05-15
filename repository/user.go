@@ -982,13 +982,12 @@ func (user *UserRepo) GetUserWorkHistory(ctx echo.Context) (int32, []*models.Use
 
 }
 func (user *UserRepo) GetAllUsersWorkHistory(ctx echo.Context) (int32, []*models.UserWorkHistoryResponse, int32, error) {
-	// Extract adminId from middleware (set in context)
 	adminId := ctx.Get("admin_id")
 	if adminId == nil {
 		return 0, nil, 0, echo.NewHTTPError(http.StatusUnauthorized, "admin ID missing in context")
 	}
 
-	// Extract limit and offset from query parameters (with defaults)
+	// Extract query params
 	limitQuery := ctx.QueryParam("limit")
 	offsetQuery := ctx.QueryParam("offset")
 
@@ -1002,36 +1001,28 @@ func (user *UserRepo) GetAllUsersWorkHistory(ctx echo.Context) (int32, []*models
 		offset = uint32(o)
 	}
 
-	// Call the repo to get work history
+	// Get paginated data
 	workHistory, err := user.dbRepo.GetAllUsersWorkHistory(adminId.(string), limit, offset)
 	if err != nil {
 		return 0, nil, 0, err
 	}
 
-	// Count total rows for pagination
-	// totalCount, err := user.dbRepo.GetAllUsersWorkHistoryCount(adminId.(string))
-	// if err != nil {
-	// 	return 0, nil, 0, err
-	// }
+	// Get total count
+	totalCount := int32(len(workHistory))
 
-	return int32(len(workHistory)), workHistory, 200, nil
-
+	return int32(len(workHistory)), workHistory, totalCount, nil
 }
 func (user *UserRepo) GetAllUsersWorkHistoryByAdminId(adminId string, limit, offset uint32) (int32, []*models.UserWorkHistoryResponse, int32, error) {
-	// Get total count for pagination
-	// totalCount, err := user.dbRepo.CountAllUsersWorkHistory(adminId)
-	// if err != nil {
-	// 	return 0, nil, 0, err
-	// }
-
-	// Get paginated work history
+	// Get paginated data
 	workHistory, err := user.dbRepo.GetAllUsersWorkHistory(adminId, limit, offset)
 	if err != nil {
 		return 0, nil, 0, err
 	}
 
-	count := int32(len(workHistory))
-	return count, workHistory, 200, nil
+	// Get total count
+	totalCount := int32(len(workHistory))
+
+	return totalCount, workHistory, totalCount, nil
 }
 func (user *UserRepo) DownloadUserWorkHistory(ctx echo.Context) (*models.UserReportPdf, int32, error) {
 	userRequest := new(models.UserReportPdfDownloadRequest)
