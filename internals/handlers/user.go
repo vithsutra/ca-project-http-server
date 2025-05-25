@@ -478,7 +478,7 @@ func (h *userHandler) GetAllUsersWorkHistory(ctx echo.Context) error {
 	limitQuery := ctx.QueryParam("limit")
 	offsetQuery := ctx.QueryParam("offset")
 
-	limit := uint32(10)
+	limit := uint32(100)
 	offset := uint32(0)
 
 	if l, err := strconv.Atoi(limitQuery); err == nil {
