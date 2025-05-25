@@ -790,3 +790,17 @@ func (repo *PostgresRepo) GetWorkHistoryForPdf(userId, startDate, endDate string
 
 	return usersWorkHistory, nil
 }
+func (repo *PostgresRepo) CountUsersWorkHistory(adminId string) (int, error) {
+	query := `
+		SELECT COUNT(*) 
+		FROM users u
+		JOIN users_history uh ON u.user_id = uh.user_id
+		WHERE u.admin_id = $1
+	`
+	var count int
+	err := repo.pool.QueryRow(context.Background(), query, adminId).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}
