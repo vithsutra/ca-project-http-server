@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"log"
+	"math"
 	"net/http"
 	"os"
 	"strconv"
@@ -466,6 +467,7 @@ func (h *userHandler) GetUserWorkHistoryHandler(ctx echo.Context) error {
 	ctx.JSON(int(statusCode), response)
 	return nil
 }
+
 func (h *userHandler) GetAllUsersWorkHistory(ctx echo.Context) error {
 	adminId := ctx.Param("adminId")
 	if adminId == "" {
@@ -475,19 +477,19 @@ func (h *userHandler) GetAllUsersWorkHistory(ctx echo.Context) error {
 		})
 	}
 
-	// Default pagination values
-	limit := uint32(100)
+	// Default pagination settings
+	limit := uint32(10)
 	offset := uint32(0)
 
-	// Parse limit and offset from query params (optional)
-	if l, err := strconv.Atoi(ctx.QueryParam("limit")); err == nil {
+	// Parse query parameters
+	if l, err := strconv.Atoi(ctx.QueryParam("limit")); err == nil && l > 0 {
 		limit = uint32(l)
 	}
-	if o, err := strconv.Atoi(ctx.QueryParam("offset")); err == nil {
+	if o, err := strconv.Atoi(ctx.QueryParam("offset")); err == nil && o >= 0 {
 		offset = uint32(o)
 	}
 
-	// Fetch data from repo
+	// Get data
 	workCount, workHistory, totalCount, err := h.repo.GetAllUsersWorkHistoryByAdminId(adminId, limit, offset)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &models.ErrorResponse{
@@ -496,14 +498,18 @@ func (h *userHandler) GetAllUsersWorkHistory(ctx echo.Context) error {
 		})
 	}
 
-	// Return structured response
+	// Return with pagination metadata
 	return ctx.JSON(http.StatusOK, &models.SuccessResponse{
 		Status:  "success",
 		Message: "successfully fetched all users work history",
 		Data: map[string]interface{}{
-			"count":       workCount,
-			"total_count": totalCount,
-			"history":     workHistory,
+			"count":        workCount,
+			"total_count":  totalCount,
+			"history":      workHistory,
+			"limit":        limit,
+			"offset":       offset,
+			"current_page": offset/limit + 1,
+			"total_pages":  int(math.Ceil(float64(totalCount) / float64(limit))),
 		},
 	})
 }
