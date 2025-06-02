@@ -1017,12 +1017,14 @@ func (user *UserRepo) GetAllUsersWorkHistory(ctx echo.Context) (int32, []*models
 }
 
 func (user *UserRepo) GetAllUsersWorkHistoryByAdminId(adminId string, limit, offset uint32) (int32, []*models.UserWorkHistoryResponse, int32, error) {
+	// Get paginated data
 	workHistory, err := user.dbRepo.GetAllUsersWorkHistory(adminId, limit, offset)
 	if err != nil {
 		return 0, nil, 0, err
 	}
 
-	totalCount, err := user.dbRepo.CountUsersWorkHistory(adminId)
+	// Get total count from DB
+	totalCount, err := user.dbRepo.GetAllUsersWorkHistoryCount(adminId)
 	if err != nil {
 		return 0, nil, 0, err
 	}
