@@ -1028,6 +1028,7 @@ func (user *UserRepo) GetAllUsersWorkHistoryByAdminId(adminId string, limit, off
 	}
 
 	return int32(len(workHistory)), workHistory, int32(totalCount), nil
+
 }
 func (user *UserRepo) DownloadUserWorkHistory(ctx echo.Context) (*models.UserReportPdf, int32, error) {
 	userRequest := new(models.UserReportPdfDownloadRequest)
