@@ -1017,19 +1017,18 @@ func (user *UserRepo) GetAllUsersWorkHistory(ctx echo.Context) (int32, []*models
 }
 
 func (user *UserRepo) GetAllUsersWorkHistoryByAdminId(adminId string, limit, offset uint32) (int32, []*models.UserWorkHistoryResponse, int32, error) {
-	// Get paginated data
 	workHistory, err := user.dbRepo.GetAllUsersWorkHistory(adminId, limit, offset)
 	if err != nil {
 		return 0, nil, 0, err
 	}
 
-	// Get total count from DB
-	totalCount, err := user.dbRepo.GetAllUsersWorkHistoryCount(adminId)
+	totalCount, err := user.dbRepo.CountUsersWorkHistory(adminId)
 	if err != nil {
 		return 0, nil, 0, err
 	}
 
 	return int32(len(workHistory)), workHistory, int32(totalCount), nil
+
 }
 func (user *UserRepo) DownloadUserWorkHistory(ctx echo.Context) (*models.UserReportPdf, int32, error) {
 	userRequest := new(models.UserReportPdfDownloadRequest)
