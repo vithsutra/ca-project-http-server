@@ -3,7 +3,7 @@ name: CA HTTP Server CI/CD
 on: 
   push:
     branches:
-      - main
+      - ca_branch_1
 
 jobs:
   build:
