@@ -111,6 +111,7 @@ func (h *userHandler) DeleteUser(ctx echo.Context) error {
 	return nil
 }
 
+// updated
 func (h *userHandler) UserLoginHandler(ctx echo.Context) error {
 	userLoginResponse, statusCode, err := h.repo.UserLogin(ctx)
 
@@ -466,6 +467,7 @@ func (h *userHandler) GetUserWorkHistoryHandler(ctx echo.Context) error {
 	ctx.JSON(int(statusCode), response)
 	return nil
 }
+
 func (h *userHandler) GetAllUsersWorkHistory(ctx echo.Context) error {
 	adminId := ctx.Param("adminId")
 	if adminId == "" {
@@ -475,27 +477,23 @@ func (h *userHandler) GetAllUsersWorkHistory(ctx echo.Context) error {
 		})
 	}
 
-	// Default pagination values
 	limit := uint32(100)
 	offset := uint32(0)
 
-	// Parse limit and offset from query params (optional)
 	if l, err := strconv.Atoi(ctx.QueryParam("limit")); err == nil {
 		limit = uint32(l)
 	}
 	if o, err := strconv.Atoi(ctx.QueryParam("offset")); err == nil {
 		offset = uint32(o)
 	}
-
-	// Fetch data from repo
 	workCount, workHistory, totalCount, err := h.repo.GetAllUsersWorkHistoryByAdminId(adminId, limit, offset)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &models.ErrorResponse{
 			Status: "error",
 			Error:  err.Error(),
 		})
-	} //
-	// Return structured response
+	}
+
 	return ctx.JSON(http.StatusOK, &models.SuccessResponse{
 		Status:  "success",
 		Message: "successfully fetched all users work history",
