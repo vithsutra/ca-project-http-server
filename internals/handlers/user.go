@@ -494,8 +494,7 @@ func (h *userHandler) GetAllUsersWorkHistory(ctx echo.Context) error {
 			Status: "error",
 			Error:  err.Error(),
 		})
-	}
-
+	} //
 	// Return structured response
 	return ctx.JSON(http.StatusOK, &models.SuccessResponse{
 		Status:  "success",
