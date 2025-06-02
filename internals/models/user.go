@@ -250,7 +250,6 @@ type UserDatabaseInterface interface {
 	GetUserInfoForPdf(userId string) (string, string, error)
 	GetWorkHistoryForPdf(userId, startDate, endDate string) ([]*UserWorkHistoryForPdf, error)
 	CountUsersWorkHistory(adminId string) (int, error)
-	GetAllUsersWorkHistoryCount(adminId string) (int, error)
 }
 
 type UserStorageInterface interface {
