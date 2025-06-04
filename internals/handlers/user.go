@@ -478,16 +478,22 @@ func (h *userHandler) GetAllUsersWorkHistory(ctx echo.Context) error {
 		})
 	}
 
-	limit := uint32(100)
-	offset := uint32(0)
+	// Defaults
+	page := 1
+	limit := 10
 
-	if l, err := strconv.Atoi(ctx.QueryParam("limit")); err == nil {
-		limit = uint32(l)
+	// Parse query params
+	if p, err := strconv.Atoi(ctx.QueryParam("page")); err == nil && p > 0 {
+		page = p
 	}
-	if o, err := strconv.Atoi(ctx.QueryParam("offset")); err == nil {
-		offset = uint32(o)
+	if l, err := strconv.Atoi(ctx.QueryParam("limit")); err == nil && l > 0 {
+		limit = l
 	}
-	workCount, workHistory, totalCount, err := h.repo.GetAllUsersWorkHistoryByAdminId(adminId, limit, offset)
+
+	offset := (page - 1) * limit
+
+	// Fetch from repo
+	workCount, workHistory, totalCount, err := h.repo.GetAllUsersWorkHistoryByAdminId(adminId, uint32(limit), uint32(offset))
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &models.ErrorResponse{
 			Status: "error",
@@ -495,10 +501,13 @@ func (h *userHandler) GetAllUsersWorkHistory(ctx echo.Context) error {
 		})
 	}
 
+	// Response
 	return ctx.JSON(http.StatusOK, &models.SuccessResponse{
 		Status:  "success",
-		Message: "successfully fetched all users work history",
+		Message: "Successfully fetched all users work history",
 		Data: map[string]interface{}{
+			"page":        page,
+			"limit":       limit,
 			"count":       workCount,
 			"total_count": totalCount,
 			"history":     workHistory,
