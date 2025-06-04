@@ -984,33 +984,49 @@ func (user *UserRepo) GetUserWorkHistory(ctx echo.Context) (int32, []*models.Use
 func (user *UserRepo) GetAllUsersWorkHistory(ctx echo.Context) (int32, []*models.UserWorkHistoryResponse, int32, error) {
 	adminId := ctx.Get("admin_id")
 	if adminId == nil {
-		return 0, nil, 0, echo.NewHTTPError(http.StatusUnauthorized, "admin ID missing in context")
+		return 0, nil, 401, echo.NewHTTPError(http.StatusUnauthorized, "admin ID missing in context")
 	}
 
-	// Extract query params
-	limitQuery := ctx.QueryParam("limit")
-	offsetQuery := ctx.QueryParam("offset")
+	// Default pagination values
+	page := ctx.QueryParam("page")
+	limit := ctx.QueryParam("limit")
 
-	limit := uint32(10)
-	offset := uint32(0)
+	if page == "" {
+		page = "1"
+	}
 
-	if l, err := strconv.Atoi(limitQuery); err == nil {
-		limit = uint32(l)
+	if limit == "" {
+		limit = "10"
 	}
-	if o, err := strconv.Atoi(offsetQuery); err == nil {
-		offset = uint32(o)
+
+	pageInt, err := strconv.Atoi(page)
+	if err != nil || pageInt <= 0 {
+		return 0, nil, 400, errors.New("page parameter must be a valid positive number")
 	}
+
+	limitInt, err := strconv.Atoi(limit)
+	if err != nil || limitInt <= 0 {
+		return 0, nil, 400, errors.New("limit parameter must be a valid positive number")
+	}
+
+	offset := (pageInt - 1) * limitInt
 
 	// Get paginated data
-	workHistory, err := user.dbRepo.GetAllUsersWorkHistory(adminId.(string), limit, offset)
+	workHistory, err := user.dbRepo.GetAllUsersWorkHistory(adminId.(string), uint32(limitInt), uint32(offset))
 	if err != nil {
-		return 0, nil, 0, err
+		log.Println("error fetching all users' work history:", err)
+		return 0, nil, 500, errors.New("internal server error")
 	}
 
-	// Get total count from DB
+	// Get total count
 	totalCount, err := user.dbRepo.CountUsersWorkHistory(adminId.(string))
 	if err != nil {
-		return 0, nil, 0, err
+		log.Println("error counting users' work history:", err)
+		return 0, nil, 500, errors.New("internal server error")
+	}
+
+	if len(workHistory) == 0 {
+		return 0, nil, 404, errors.New("no user work history found")
 	}
 
 	return int32(len(workHistory)), workHistory, int32(totalCount), nil
@@ -1028,8 +1044,8 @@ func (user *UserRepo) GetAllUsersWorkHistoryByAdminId(adminId string, limit, off
 	}
 
 	return int32(len(workHistory)), workHistory, int32(totalCount), nil
-
 }
+
 func (user *UserRepo) DownloadUserWorkHistory(ctx echo.Context) (*models.UserReportPdf, int32, error) {
 	userRequest := new(models.UserReportPdfDownloadRequest)
 
