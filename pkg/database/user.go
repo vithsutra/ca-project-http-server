@@ -431,9 +431,10 @@ func (repo *PostgresRepo) GetAllUsersWorkHistory(adminId string, limit, offset u
 	FROM users u
 	JOIN users_history uh ON u.user_id = uh.user_id
 	WHERE u.admin_id = $1
-	ORDER BY uh.work_date DESC, uh.created_at DESC 
+	ORDER BY uh.work_date DESC
 	LIMIT $2 OFFSET $3;`
 
+	//, uh.created_at DESC
 	rows, err := repo.pool.Query(context.Background(), query, adminId, limit, offset)
 	if err != nil {
 		return nil, err
