@@ -418,7 +418,7 @@ func (repo *PostgresRepo) GetAllUsersPendingLeaves(adminId string, limit uint32,
 	return pendingLeaves, nil
 
 }
-func (repo *PostgresRepo) GetAllUsersWorkHistory(adminId string, limit, offset uint32) ([]*models.UserWorkHistoryResponse, error) {
+func (repo *PostgresRepo) GetAllUsersWorkHistory(adminId string, workDate string, limit, offset uint32) ([]*models.UserWorkHistoryResponse, error) {
 	query := `SELECT
 		u.name,
 		uh.work_date,
@@ -431,11 +431,11 @@ func (repo *PostgresRepo) GetAllUsersWorkHistory(adminId string, limit, offset u
 	FROM users u
 	JOIN users_history uh ON u.user_id = uh.user_id
 	WHERE u.admin_id = $1
+	  AND uh.work_date = $2
 	ORDER BY uh.work_date DESC
-	LIMIT $2 OFFSET $3;`
+	LIMIT $3 OFFSET $4;`
 
-	//, uh.created_at DESC
-	rows, err := repo.pool.Query(context.Background(), query, adminId, limit, offset)
+	rows, err := repo.pool.Query(context.Background(), query, adminId, workDate, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -803,5 +803,22 @@ func (repo *PostgresRepo) CountUsersWorkHistory(adminId string) (int, error) {
 	if err != nil {
 		return 0, err
 	}
+	return count, nil
+}
+func (repo *PostgresRepo) CountUsersWorkHistoryByDate(adminId, workDate string) (int32, error) {
+	query := `
+	SELECT COUNT(*)
+	FROM users u
+	JOIN users_history uh ON u.user_id = uh.user_id
+	WHERE u.admin_id = $1
+	  AND uh.work_date = $2;
+	`
+
+	var count int32
+	err := repo.pool.QueryRow(context.Background(), query, adminId, workDate).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
 	return count, nil
 }
