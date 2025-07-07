@@ -493,8 +493,7 @@ func (h *userHandler) GetAllUsersWorkHistory(ctx echo.Context) error {
 	offset := (page - 1) * limit
 
 	// Fetch from repo
-	// Provide an empty string or appropriate value for the missing argument
-	workCount, workHistory, totalCount, err := h.repo.GetAllUsersWorkHistoryByAdminId(adminId, "", uint32(limit), uint32(offset))
+	workCount, workHistory, totalCount, err := h.repo.GetAllUsersWorkHistoryByAdminId(adminId, uint32(limit), uint32(offset))
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &models.ErrorResponse{
 			Status: "error",

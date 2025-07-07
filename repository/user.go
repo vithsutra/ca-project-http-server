@@ -993,42 +993,41 @@ func (user *UserRepo) GetAllUsersWorkHistory(ctx echo.Context) (int32, []*models
 		return 0, nil, 401, echo.NewHTTPError(http.StatusUnauthorized, "admin ID missing in context")
 	}
 
-	pageStr := ctx.QueryParam("page")
-	limitStr := ctx.QueryParam("limit")
-	workDate := ctx.QueryParam("work_date")
+	// Default pagination values
+	page := ctx.QueryParam("page")
+	limit := ctx.QueryParam("limit")
 
-	if workDate == "" {
-		return 0, nil, 400, errors.New("work_date is required")
+	if page == "" {
+		page = "1"
 	}
 
-	if pageStr == "" {
-		pageStr = "1"
-	}
-	if limitStr == "" {
-		limitStr = "10"
+	if limit == "" {
+		limit = "10"
 	}
 
-	page, err := strconv.Atoi(pageStr)
-	if err != nil || page <= 0 {
-		return 0, nil, 400, errors.New("invalid page value")
+	pageInt, err := strconv.Atoi(page)
+	if err != nil || pageInt <= 0 {
+		return 0, nil, 400, errors.New("page parameter must be a valid positive number")
 	}
 
-	limit, err := strconv.Atoi(limitStr)
-	if err != nil || limit <= 0 {
-		return 0, nil, 400, errors.New("invalid limit value")
+	limitInt, err := strconv.Atoi(limit)
+	if err != nil || limitInt <= 0 {
+		return 0, nil, 400, errors.New("limit parameter must be a valid positive number")
 	}
 
-	offset := (page - 1) * limit
+	offset := (pageInt - 1) * limitInt
 
-	workHistory, err := user.dbRepo.GetAllUsersWorkHistory(adminId.(string), workDate, uint32(limit), uint32(offset))
+	// Get paginated data
+	workHistory, err := user.dbRepo.GetAllUsersWorkHistory(adminId.(string), uint32(limitInt), uint32(offset))
 	if err != nil {
-		log.Println("error fetching users work history:", err)
+		log.Println("error fetching all users' work history:", err)
 		return 0, nil, 500, errors.New("internal server error")
 	}
 
-	totalCount, err := user.dbRepo.CountUsersWorkHistoryByDate(adminId.(string), workDate)
+	// Get total count
+	totalCount, err := user.dbRepo.CountUsersWorkHistory(adminId.(string))
 	if err != nil {
-		log.Println("error counting users work history:", err)
+		log.Println("error counting users' work history:", err)
 		return 0, nil, 500, errors.New("internal server error")
 	}
 
@@ -1039,8 +1038,8 @@ func (user *UserRepo) GetAllUsersWorkHistory(ctx echo.Context) (int32, []*models
 	return int32(len(workHistory)), workHistory, int32(totalCount), nil
 }
 
-func (user *UserRepo) GetAllUsersWorkHistoryByAdminId(adminId string, workDate string, limit, offset uint32) (int32, []*models.UserWorkHistoryResponse, int32, error) {
-	workHistory, err := user.dbRepo.GetAllUsersWorkHistory(adminId, workDate, limit, offset)
+func (user *UserRepo) GetAllUsersWorkHistoryByAdminId(adminId string, limit, offset uint32) (int32, []*models.UserWorkHistoryResponse, int32, error) {
+	workHistory, err := user.dbRepo.GetAllUsersWorkHistory(adminId, limit, offset)
 	if err != nil {
 		return 0, nil, 0, err
 	}
