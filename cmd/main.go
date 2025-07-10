@@ -37,10 +37,7 @@ func main() {
 
 	awsS3Connection := NewS3Connection()
 
-	rabbitmqConn := NewRabbitmqConnection()
+	redisConn := ConnectToRedisQueue()
 
-	defer rabbitmqConn.conn.Close()
-	defer rabbitmqConn.chann.Close()
-
-	Start(dbConnPool, awsS3Connection, rabbitmqConn)
+	Start(dbConnPool, awsS3Connection, redisConn)
 }
